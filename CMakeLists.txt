@@ -6,7 +6,7 @@ if(NOT Boost_FOUND)
   message("Boost_FOUND is false")
 endif()
 
-aux_source_directory(. srcs)
+aux_source_directory(./src srcs)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_executable(daobell ${srcs})
