@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fstream>
+#include <iomanip>
 #include "url_parse.h"
 #include "http_header_parse.h"
 
@@ -82,10 +83,16 @@ int main(int argc, char *argv[])
   hhp.print();
   std::cout << "file size: " << hhp.get_file_size() << " bytes" << std::endl;
 
+  size_t downloaded = 0;
+  double file_size = hhp.get_file_size();
+  size_t size_count = hhp.get_file_size_number_count();
+
   char *str = strstr(buff, "\r\n\r\n");
   file.write(str + strlen("\r\n\r\n"), n - (str - buff) - strlen("\r\n\r\n"));
   while ((n = recv(sock_cli, buff, sizeof(buff) - 1, 0)) > 0) {
-    std::cout << "ongoing" << std::endl;
+    downloaded += n;
+    std::cout << std::setw(size_count) << downloaded << " bytes downloaded ";
+    std::cout << std::setprecision(3) << (downloaded / file_size) * 100 << "%" << std::endl;
     file.write(buff, n);
   }
 

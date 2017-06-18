@@ -12,6 +12,7 @@ struct http_header_parse
   void parse();
   void print();
   size_t get_file_size();
+  size_t get_file_size_number_count();
 
   std::istringstream header_;
   std::map<std::string, std::string> header_map_;
@@ -53,6 +54,18 @@ size_t http_header_parse::get_file_size()
   }
 
   return file_size;
+}
+
+size_t http_header_parse::get_file_size_number_count()
+{
+  size_t count = 0;
+  size_t file_size = get_file_size();
+  while (file_size > 0) {
+    count++;
+    file_size /= 10;
+  }
+
+  return count;
 }
 
 #endif /* HTTP_HEADER_PARSE_H */
