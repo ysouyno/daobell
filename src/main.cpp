@@ -9,9 +9,12 @@
 #include <iomanip>
 #include "url_parse.h"
 #include "http_header_parse.h"
+#include "console_log.h"
 
 int main(int argc, char *argv[])
 {
+  log_y("enter main()\n");
+
   if (argc <= 1) {
     std::cout << "usage: xxx.exe url" << std::endl;
     return 1;
@@ -97,6 +100,8 @@ int main(int argc, char *argv[])
   }
 
   file.close();
+
+  log_y("leave main()\n");
 
   return 0;
 }
