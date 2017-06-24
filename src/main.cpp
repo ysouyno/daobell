@@ -9,8 +9,7 @@
 #include <iomanip>
 #include "url_parse.h"
 #include "http_header_parse.h"
-#include "console_log.h"
-#include "file_log.h"
+#include "log_wrapper.h"
 
 int main(int argc, char *argv[])
 {
@@ -106,9 +105,6 @@ int main(int argc, char *argv[])
   log_w("%s\n", test_str.c_str());
   log_t("%s\n", test_str.c_str());
   log_i("%s\n", test_str.c_str());
-
-  log_file("%s\n", test_str.c_str());
-  log_file("%s\n", test_str.c_str());
 
   return 0;
 }
