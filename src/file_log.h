@@ -57,7 +57,6 @@ private:
   std::string file_name_;
 };
 
-
 class file_log
 {
 public:
@@ -84,7 +83,7 @@ public:
       return 0;
     }
 
-    char *fmt_buf = (char*)malloc(++rt);
+    char *fmt_buf = (char *)malloc(++rt);
     if (fmt_buf == NULL) {
       return 0;
     }

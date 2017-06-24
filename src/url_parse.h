@@ -1,11 +1,30 @@
 #ifndef URL_PARSE_H
 #define URL_PARSE_H
 
+#include <string>
+#include <boost/regex.hpp>
+#include "log_wrapper.h"
+
 struct url_parse
 {
-  url_parse(const std::string &url);
+  url_parse() {}
   ~url_parse() {}
+  url_parse(const std::string &url);
+
   void parse();
+  void parse(const std::string &url);
+
+  int operator()(const std::string &url)
+  {
+    if (url.empty()) {
+      log_e("url is null\n");
+      return -1;
+    }
+
+    url_ = url;
+    parse();
+    return 0;
+  }
 
   std::string url_;
   std::string scheme_;
@@ -16,14 +35,18 @@ struct url_parse
   std::string fragment_;
 };
 
-url_parse::url_parse(const std::string &url)
-: url_(url)
+url_parse::url_parse(const std::string &url) : url_(url)
 {
   parse();
 }
 
 void url_parse::parse()
 {
+  if (url_.empty()) {
+    log_e("url is null\n");
+    return;
+  }
+
   boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
   boost::cmatch what;
 
@@ -36,8 +59,19 @@ void url_parse::parse()
     fragment_ = std::string(what[6].first, what[6].second);
   }
   else {
-    std::cout << "url_parse()::parse input url not http" << std::endl;
+    log_e("url_parse()::parse input url not http\n");
   }
+}
+
+void url_parse::parse(const std::string &url)
+{
+  if (url.empty()) {
+    log_e("url is null\n");
+    return;
+  }
+
+  url_ = url;
+  parse();
 }
 
 #endif /* URL_PARSE_H */
