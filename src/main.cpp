@@ -99,11 +99,12 @@ int main(int argc, char *argv[])
 
   file.close();
 
-  log_y("hello world\n");
-  log_e("hello world\n");
-  log_w("hello world\n");
-  log_t("hello world\n");
-  log_i("hello world\n");
+  std::string test_str("hello world");
+  log_y("%s\n", test_str.c_str());
+  log_e("%s\n", test_str.c_str());
+  log_w("%s\n", test_str.c_str());
+  log_t("%s\n", test_str.c_str());
+  log_i("%s\n", test_str.c_str());
 
   return 0;
 }

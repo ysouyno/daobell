@@ -42,14 +42,34 @@ public:
   {
     va_list ap;
     va_start(ap, fmt);
-    int rt = format_output(fmt, ap, level_);
+    int rt = vsnprintf(NULL, 0, fmt, ap);
     va_end(ap);
+    if (rt <= 0) {
+      return 0;
+    }
+
+    char *fmt_buf = (char *)malloc(++rt);
+    if (fmt_buf == NULL) {
+      return 0;
+    }
+
+    va_start(ap, fmt);
+    rt = vsnprintf(fmt_buf, rt, fmt, ap);
+    va_end(ap);
+    if (rt < 0) {
+      free(fmt_buf);
+      return 0;
+    }
+
+    rt = format_output(fmt_buf, level_);
+
+    free(fmt_buf);
     return rt;
   }
 
 private:
   void init_color(log_level level);
-  int format_output(const char *fmt, va_list ap, log_level level);
+  int format_output(const char *log, log_level level);
   int printf_output(const std::string &log);
   size_t append_time(std::string &out);
 
@@ -114,24 +134,8 @@ default:
   }
 }
 
-int console_log::format_output(const char *fmt, va_list ap, log_level level)
+int console_log::format_output(const char *log, log_level level)
 {
-  int rt = vsnprintf(NULL, 0, fmt, ap);
-  if (rt <= 0) {
-    return 0;
-  }
-
-  char *fmt_buf = (char*)malloc(++rt);
-  if (fmt_buf == NULL) {
-    return 0;
-  }
-
-  rt = vsnprintf(fmt_buf, rt, fmt, ap);
-  if (rt < 0) {
-    free(fmt_buf);
-    return 0;
-  }
-
   std::string log_line;
   log_line += color_beg_;
   append_time(log_line);
@@ -167,10 +171,8 @@ default:
   log_line += ") ";
   log_line += func_;
   log_line += ": ";
-  log_line += fmt_buf;
+  log_line += log;
   log_line += color_end_;
-
-  free(fmt_buf);
 
   return printf_output(log_line.c_str());
 }
