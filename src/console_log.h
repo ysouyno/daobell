@@ -7,8 +7,16 @@
 
 class console_log;
 
-#define log_y(...)\
-{ console_log cl(console_log::log_level::LOG_CRY, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
+#define log_y(...)                                                      \
+  { console_log cl(console_log::log_level::LOG_CRY, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
+#define log_e(...)                                                      \
+  { console_log cl(console_log::log_level::LOG_ERR, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
+#define log_w(...)                                                      \
+  { console_log cl(console_log::log_level::LOG_WRN, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
+#define log_t(...)                                                      \
+  { console_log cl(console_log::log_level::LOG_TRC, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
+#define log_i(...)                                                      \
+  { console_log cl(console_log::log_level::LOG_INF, __FILE__, __LINE__, __FUNCTION__); cl(__VA_ARGS__); }
 
 class console_log
 {
@@ -18,13 +26,14 @@ public:
   };
 
   console_log(log_level level, const std::string &file, size_t line, const std::string &func) :
-    color_start_(),
+    color_beg_(),
     color_end_(),
     level_(level),
     file_(file),
     line_(line),
     func_(func)
   {
+    init_color(level_);
   }
 
   ~console_log() = default;
@@ -39,18 +48,71 @@ public:
   }
 
 private:
+  void init_color(log_level level);
   int format_output(const char *fmt, va_list ap, log_level level);
   int printf_output(const std::string &log);
   size_t append_time(std::string &out);
 
 private:
-  std::string color_start_;
+  std::string color_beg_;
   std::string color_end_;
   log_level level_;
   std::string file_;
   size_t line_;
   std::string func_;
 };
+
+void console_log::init_color(log_level level)
+{
+  // https://en.wikipedia.org/wiki/ANSI_escape_code#graphics
+  //          foreground background
+  // black        30         40
+  // red          31         41
+  // green        32         42
+  // yellow       33         43
+  // blue         34         44
+  // magenta      35         45
+  // cyan         36         46
+  // white        37         47
+
+  // reset             0  (everything back to normal)
+  // bold/bright       1  (often a brighter shade of the same colour)
+  // underline         4
+  // inverse           7  (swap foreground and background colours)
+  // bold/bright off  21
+  // underline off    24
+  // inverse off      27
+
+  switch (level) {
+  case LOG_CRY: {
+    color_beg_ = "\033[0;41m";
+    color_end_ = "\033[0;m";
+    break;
+  }
+  case LOG_ERR: {
+    color_beg_ = "\033[0;31m";
+    color_end_ = "\033[0;m";
+    break;
+  }
+  case LOG_WRN: {
+    color_beg_ = "\033[0;33m";
+    color_end_ = "\033[0;m";
+    break;
+  }
+  case LOG_TRC: {
+    color_beg_ = "\033[0;35m";
+    color_end_ = "\033[0;m";
+    break;
+  }
+  case LOG_INF: {
+    color_beg_ = "";
+    color_end_ = "";
+    break;
+  }
+default:
+    break;
+  }
+}
 
 int console_log::format_output(const char *fmt, va_list ap, log_level level)
 {
@@ -71,12 +133,28 @@ int console_log::format_output(const char *fmt, va_list ap, log_level level)
   }
 
   std::string log_line;
+  log_line += color_beg_;
+  append_time(log_line);
 
   switch (level) {
   case LOG_CRY: {
-    log_line += "\033[1;31m";
-    append_time(log_line);
     log_line += "[CRY] ";
+    break;
+  }
+  case LOG_ERR: {
+    log_line += "[ERR] ";
+    break;
+  }
+  case LOG_WRN: {
+    log_line += "[WRN] ";
+    break;
+  }
+  case LOG_TRC: {
+    log_line += "[TRC] ";
+    break;
+  }
+  case LOG_INF: {
+    log_line += "[INF] ";
     break;
   }
 default:
@@ -90,7 +168,7 @@ default:
   log_line += func_;
   log_line += ": ";
   log_line += fmt_buf;
-  log_line += "\033[0;m";
+  log_line += color_end_;
 
   free(fmt_buf);
 

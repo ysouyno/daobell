@@ -13,8 +13,6 @@
 
 int main(int argc, char *argv[])
 {
-  log_y("enter main()\n");
-
   if (argc <= 1) {
     std::cout << "usage: xxx.exe url" << std::endl;
     return 1;
@@ -101,7 +99,11 @@ int main(int argc, char *argv[])
 
   file.close();
 
-  log_y("leave main()\n");
+  log_y("hello world\n");
+  log_e("hello world\n");
+  log_w("hello world\n");
+  log_t("hello world\n");
+  log_i("hello world\n");
 
   return 0;
 }
