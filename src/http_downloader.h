@@ -5,7 +5,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <netdb.h>
 #include <iomanip>
 #include <fstream>
 #include "url_parse.h"
