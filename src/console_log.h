@@ -24,6 +24,13 @@ public:
     func_(func)
   {
     init_color(level_);
+
+    if (!file_.empty()) {
+      size_t pos = file_.find_last_of('/');
+      if (std::string::npos != pos) {
+        file_ = file_.substr(pos + 1, file_.size());
+      }
+    }
   }
 
   ~console_log() = default;
