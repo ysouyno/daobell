@@ -27,9 +27,11 @@ public:
     }
   }
 
-  http_multi_threads_downloader(const std::string &url, size_t thread_count = 1) :
+  http_multi_threads_downloader(const std::string &url, size_t thread_count = 1, size_t thread_index = 0) :
     url_(url),
-    thread_count_(thread_count)
+    thread_count_(thread_count),
+    current_thread_index_(thread_index),
+    fp_(NULL)
   {
     if (1 == thread_count_) {
       log_i("single thread\n");
@@ -37,10 +39,26 @@ public:
     }
   }
 
-  int init();
+  size_t get_current_thread_index()
+  {
+    return current_thread_index_;
+  }
+
+  int download_it();
 
 private:
+  int init();
+  int connect_server();
+  int gen_request_header(std::string &out);
+  int send_request_query_http_header();
+  int gen_range_header(std::string &out);
+  int send_range_request(const std::string &header);
+  int get_dest_file_name(std::string &out);
+  int gen_file_name_temp(std::string &out);
+
   std::string url_;
+  std::string file_name_temp_;
+  std::string dest_file_name_;
   url_parse up_;
   size_t thread_count_;
   size_t thread_offset_beg_;

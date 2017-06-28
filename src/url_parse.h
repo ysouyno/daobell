@@ -19,6 +19,11 @@ public:
   void parse();
   void parse(const std::string &url);
 
+  bool valid()
+  {
+    return (!domain_.empty());
+  }
+
   int operator()(const std::string &url)
   {
     if (url.empty()) {

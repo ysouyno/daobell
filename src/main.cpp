@@ -1,5 +1,4 @@
-#include "http_downloader.h"
-#include "http_multi_threads_downloader.h"
+#include "http_downloader_wrapper.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,8 +10,8 @@ int main(int argc, char *argv[])
   // http_downloader hd(argv[1]);
   // hd.download_it();
 
-  http_multi_threads_downloader hmtd(argv[1], 1);
-  hmtd.init();
+  http_downloader_wrapper hdw(argv[1], 2);
+  hdw.download_file();
 
   return 0;
 }
