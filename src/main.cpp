@@ -1,4 +1,4 @@
-#include "http_downloader_wrapper.h"
+#include "http_downloader.h"
 
 int main(int argc, char *argv[])
 {
@@ -7,11 +7,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // http_downloader hd(argv[1]);
-  // hd.download_it();
-
-  http_downloader_wrapper hdw(argv[1], 2);
-  hdw.download_file();
+  http_downloader hd(argv[1], 2);
+  hd.download_file();
 
   return 0;
 }

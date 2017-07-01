@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 #include "url_parse.h"
 #include "http_header_parse.h"
 #include "log_wrapper.h"
@@ -34,7 +35,7 @@ public:
     fp_(NULL)
   {
     if (1 == thread_count_) {
-      log_i("single thread\n");
+      log_t("single thread\n");
       current_thread_index_ = 0;
     }
   }

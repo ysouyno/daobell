@@ -17,7 +17,7 @@ int http_multi_threads_downloader::connect_server()
 {
   sock_ = socket(AF_INET, SOCK_STREAM, 0);
   if (sock_ < 0) {
-    log_e("socket() error\n");
+    log_e("socket() error: %d\n", errno);
     return -1;
   }
 
@@ -27,13 +27,13 @@ int http_multi_threads_downloader::connect_server()
 
   int rt = bind(sock_, (sockaddr *)&sa, sizeof(sa));
   if (sock_ < 0) {
-    log_e("bind() error\n");
+    log_e("bind() error: %d\n", errno);
     return -1;
   }
 
   hostent *p = gethostbyname(up_.domain_.c_str());
   if (sock_ < 0) {
-    log_e("gethostbyname() error\n");
+    log_e("gethostbyname() error: %d\n", errno);
     return -1;
   }
 
@@ -42,7 +42,7 @@ int http_multi_threads_downloader::connect_server()
 
   rt = connect(sock_, (sockaddr *)&sa, sizeof(sa));
   if (rt < 0) {
-    log_e("connect() error\n");
+    log_e("connect() error: %d\n", errno);
     return -1;
   }
 
@@ -64,7 +64,7 @@ int http_multi_threads_downloader::send_request_query_http_header()
 
   int rt = send(sock_, header.c_str(), header.size(), 0);
   if (rt < 0) {
-    log_e("send() error\n");
+    log_e("send() error: %d\n", errno);
     return -1;
   }
 
@@ -72,7 +72,7 @@ int http_multi_threads_downloader::send_request_query_http_header()
   char buff[1024] = { 0 };
   rt = recv(sock_, buff, sizeof(buff) - 1, 0);
   if (rt < 0) {
-    log_e("recv() error\n");
+    log_e("recv() error: %d\n", errno);
     return -1;
   }
 
@@ -141,7 +141,7 @@ int http_multi_threads_downloader::send_range_request(const std::string &header)
   // send request header with range value
   int rt = send(sock_, header.c_str(), header.size(), 0);
   if (rt < 0) {
-    log_e("send() error\n");
+    log_e("send() error: %d\n", errno);
     return -1;
   }
   else {
@@ -206,7 +206,7 @@ int http_multi_threads_downloader::download_it()
   char buff[1024] = { 0 };
   int rt = recv(sock_, buff, sizeof(buff) - 1, 0);
   if (rt < 0) {
-    log_e("recv() error\n");
+    log_e("recv() error: %d\n", errno);
     return -1;
   }
 

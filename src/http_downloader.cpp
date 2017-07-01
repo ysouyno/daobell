@@ -1,136 +1,94 @@
 #include "http_downloader.h"
 
-http_downloader::~http_downloader()
+void *thread_proc(void *param)
 {
-  if (sock_ > 0) {
-    close(sock_);
-  }
+  http_multi_threads_downloader *hmtd = (http_multi_threads_downloader *)param;
+  hmtd->download_it();
+
+  return NULL;
 }
 
-http_downloader::http_downloader(const std::string &url) :
-  url_(url),
-  request_(),
-  dest_file_name_(),
-  sock_(0)
+void http_downloader::download_file()
 {
-  init();
+  log_t("thread_count_: %d\n", thread_count_);
+  if (1 == thread_count_) {
+    sp_hmtd_ = std::make_shared<http_multi_threads_downloader>(url_, thread_count_, 0);
+    sp_hmtd_->download_it();
+  }
+  else {
+    pthread_t tid[thread_count_];
+    size_t tid_index = 0;
+    vec_sp_hmtd_.erase(vec_sp_hmtd_.begin(), vec_sp_hmtd_.end());
+
+    for (size_t i = 0; i < thread_count_; ++i) {
+      vec_sp_hmtd_.push_back(std::make_shared<http_multi_threads_downloader>(url_, thread_count_, i));
+    }
+
+    for (std::vector<std::shared_ptr<http_multi_threads_downloader> >::iterator it = vec_sp_hmtd_.begin(); it != vec_sp_hmtd_.end(); ++it) {
+      pthread_attr_t pat;
+      pthread_attr_init(&pat);
+      pthread_attr_setdetachstate(&pat, PTHREAD_CREATE_DETACHED);
+      pthread_create(&tid[tid_index], &pat, thread_proc, (void *)it->get());
+      pthread_attr_destroy(&pat);
+      tid_index++;
+    }
+  }
+
+  getchar();
+
+  merge_file();
 }
 
-int http_downloader::init()
+void http_downloader::merge_file()
 {
-  if (url_.empty()) {
-    log_e("url is null\n");
-    return -1;
+  if (1 == thread_count_) {
+    log_t("single thread just return\n");
+    return;
   }
 
-  up_(url_);
-
-  sock_ = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock_ < 0) {
-    log_e("socket() error\n");
-    return -1;
+  if (vec_sp_hmtd_.size() != thread_count_) {
+    log_e("thread object count not match with thread count\n");
+    return;
   }
 
-  return 0;
-}
+  FILE *fp = NULL;
+  std::string file_name = vec_sp_hmtd_.at(0)->get_dest_file_name();
+  log_t("merge file: %s\n", file_name.c_str());
 
-int http_downloader::gen_request()
-{
-  request_.clear();
-
-  request_ += "GET ";
-  request_ += up_.path_;
-  request_ += " HTTP/1.1\r\nHost: ";
-  request_ += up_.domain_;
-  request_ += "\r\nConnection:Close\r\n\r\n";
-
-  return 0;
-}
-
-int http_downloader::gen_dest_file_name()
-{
-  dest_file_name_.clear();
-  dest_file_name_ = "just_for_temp_test";
-
-  return 0;
-}
-
-int http_downloader::download_it()
-{
-  if (sock_ <= 0) {
-    log_e("sock_ is invalid\n");
-    return -1;
+  if ((fp = fopen(file_name.c_str(), "wb+")) < 0) {
+    log_e("fopen() %s error: %d\n", file_name.c_str(), errno);
+    return;
   }
 
-  sockaddr_in sa;
-  bzero(&sa, sizeof(sockaddr_in));
-  sa.sin_family = AF_INET;
+  for (std::vector<std::shared_ptr<http_multi_threads_downloader> >::iterator it = vec_sp_hmtd_.begin(); it != vec_sp_hmtd_.end(); ++it) {
+    log_t("multi threads\n");
 
-  int rt = bind(sock_, (sockaddr*)&sa, sizeof(sa));
-  if (rt < 0) {
-    log_e("bind() error\n");
-    return -1;
+    FILE *fp_temp = NULL;
+    int rt = 0;
+    char buff[1024] = {0};
+
+    if ((fp_temp = fopen((*it)->get_dest_file_name_temp().c_str(), "r")) < 0) {
+      log_e("fopen() %s error: %d\n", (*it)->get_dest_file_name_temp().c_str(), errno);
+      break;
+    }
+
+    while (true) {
+      if ((rt = fread(buff, sizeof(char), sizeof(buff), fp_temp)) <= 0) {
+        break;
+      }
+
+      fwrite(buff, sizeof(char), rt, fp);
+      memset(buff, 0, sizeof(buff));
+    }
+
+    fclose(fp_temp);
+
+    if (-1 == unlink((*it)->get_dest_file_name_temp().c_str())) {
+      log_e("unlink() error: %d\n", errno);
+    }
   }
 
-  hostent *p = gethostbyname(up_.domain_.c_str());
-  if (NULL == p) {
-    log_e("gethostbyname() error\n");
-    return -1;
-  }
+  log_t("merge file done\n");
 
-  sa.sin_port = htons(80);
-  memcpy(&sa.sin_addr, p->h_addr, 4);
-
-  rt = connect(sock_, (sockaddr*)&sa, sizeof(sa));
-  if (rt < 0) {
-    log_e("connect() error\n");
-    return -1;
-  }
-
-  if (gen_request() < 0) {
-    log_e("gen_request() error\n");
-    return -1;
-  }
-
-  rt = send(sock_, request_.c_str(), request_.size(), 0);
-  if (rt < 0) {
-    log_e("send() error\n");
-    return -1;
-  }
-
-  if (gen_dest_file_name() < 0) {
-    log_e("gen_dest_file_name() error\n");
-    return -1;
-  }
-
-  std::fstream file;
-
-  file.open(dest_file_name_.c_str(), std::ios::out | std::ios::binary);
-  char buff[1024] = {0};
-  rt = recv(sock_, buff, sizeof(buff) - 1, 0);
-  if (rt < 0) {
-    log_e("recv() error\n");
-    return -1;
-  }
-
-  http_header_parse hhp(buff);
-  hhp.print();
-  std::cout << "file size: " << hhp.get_file_size() << " bytes" << std::endl;
-
-  size_t downloaded = 0;
-  double file_size = hhp.get_file_size();
-  size_t size_count = hhp.get_file_size_number_count();
-
-  char *str = strstr(buff, "\r\n\r\n");
-  file.write(str + strlen("\r\n\r\n"), rt - (str - buff) - strlen("\r\n\r\n"));
-  while ((rt = recv(sock_, buff, sizeof(buff) - 1, 0)) > 0) {
-    downloaded += rt;
-    std::cout << std::setw(size_count) << downloaded << " bytes downloaded ";
-    std::cout << std::setprecision(3) << (downloaded / file_size) * 100 << "%" << std::endl;
-    file.write(buff, rt);
-  }
-
-  file.close();
-
-  return 0;
+  fclose(fp);
 }

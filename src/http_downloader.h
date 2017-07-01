@@ -1,36 +1,32 @@
-#ifndef HTTP_DOWNLOADER_H
-#define HTTP_DOWNLOADER_H
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <iomanip>
-#include <fstream>
-#include "url_parse.h"
-#include "http_header_parse.h"
+#include <iostream>
+#include <string>
+#include <memory>
+#include <vector>
+#include <pthread.h>
+#include <errno.h>
+#include "http_multi_threads_downloader.h"
 #include "log_wrapper.h"
 
 class http_downloader
 {
- public:
-  http_downloader();
-  ~http_downloader();
-  http_downloader(const std::string &url);
+public:
+  http_downloader() {}
+  ~http_downloader() {}
 
-  int download_it();
+  http_downloader(const std::string &url, const size_t thread_count = 1) :
+    url_(url),
+    thread_count_(thread_count)
+  {
+  }
 
- private:
-  int init();
-  int gen_request();
-  int gen_dest_file_name();
+  void download_file();
 
- private:
+private:
+  void merge_file();
+
+private:
   std::string url_;
-  std::string request_;
-  std::string dest_file_name_;
-  int sock_;
-  url_parse up_;
+  size_t thread_count_;
+  std::shared_ptr<http_multi_threads_downloader> sp_hmtd_;
+  std::vector<std::shared_ptr<http_multi_threads_downloader> > vec_sp_hmtd_;
 };
-
-#endif /* HTTP_DOWNLOADER_H */
