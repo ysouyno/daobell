@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <pthread.h>
+#include <errno.h>
 #include "http_multi_threads_downloader.h"
 #include "log_wrapper.h"
 

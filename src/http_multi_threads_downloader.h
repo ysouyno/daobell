@@ -46,6 +46,26 @@ public:
 
   int download_it();
 
+  size_t get_file_size()
+  {
+    if (1 == thread_count_) {
+      return file_size_;
+    }
+    else {
+      return thread_offset_beg_ - thread_offset_end_;
+    }
+  }
+
+  const std::string &get_dest_file_name_temp() const
+  {
+    return dest_file_name_temp_;
+  }
+
+  const std::string &get_dest_file_name() const
+  {
+    return dest_file_name_;
+  }
+
 private:
   int init();
   int connect_server();
@@ -59,6 +79,7 @@ private:
   std::string url_;
   std::string file_name_temp_;
   std::string dest_file_name_;
+  std::string dest_file_name_temp_;
   url_parse up_;
   size_t thread_count_;
   size_t thread_offset_beg_;

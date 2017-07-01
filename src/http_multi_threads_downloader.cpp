@@ -198,12 +198,11 @@ int http_multi_threads_downloader::download_it()
   gen_range_header(range_header);
   send_range_request(range_header);
 
-  std::string dest_file_name_temp;
-  gen_file_name_temp(dest_file_name_temp);
+  gen_file_name_temp(dest_file_name_temp_);
 
   // recv the whole file or the part of it in thread
   std::fstream file;
-  file.open(dest_file_name_temp.c_str(), std::ios::out | std::ios::binary);
+  file.open(dest_file_name_temp_.c_str(), std::ios::out | std::ios::binary);
   char buff[1024] = { 0 };
   int rt = recv(sock_, buff, sizeof(buff) - 1, 0);
   if (rt < 0) {
