@@ -32,7 +32,8 @@ public:
     url_(url),
     thread_count_(thread_count),
     current_thread_index_(thread_index),
-    fp_(NULL)
+    fp_(NULL),
+    downloaded_size_(0)
   {
     if (1 == thread_count_) {
       log_t("single thread\n");
@@ -49,12 +50,21 @@ public:
 
   size_t get_file_size()
   {
-    if (1 == thread_count_) {
-      return file_size_;
+    if (init() < 0) {
+      log_e("init() error\n");
+      return -1;
     }
-    else {
-      return thread_offset_beg_ - thread_offset_end_;
-    }
+
+    std::string header;
+    gen_request_header(header);
+    send_request_query_http_header();
+
+    return file_size_;
+  }
+
+  size_t get_downloaded_size() const
+  {
+    return downloaded_size_;
   }
 
   const std::string &get_dest_file_name_temp() const
@@ -90,6 +100,7 @@ private:
   size_t current_thread_index_; // from 0 to thread_count_ - 1
   int sock_;
   FILE *fp_;
+  size_t downloaded_size_;
 };
 
 #endif /* HTTP_MULTI_THREADS_DOWNLOADER_H */

@@ -212,13 +212,11 @@ int http_multi_threads_downloader::download_it()
 
   char *str = strstr(buff, "\r\n\r\n");
   file.write(str + strlen("\r\n\r\n"), rt - (str - buff) - strlen("\r\n\r\n"));
-  size_t downloaded = rt - (str - buff) - strlen("\r\n\r\n");
+  downloaded_size_ = rt - (str - buff) - strlen("\r\n\r\n");
   while ((rt = recv(sock_, buff, sizeof(buff) - 1, 0)) > 0) {
-    downloaded += rt;
+    downloaded_size_ += rt;
     file.write(buff, rt);
   }
-
-  std::cout << "downloaded: " << downloaded << std::endl;
 
   file.close();
 

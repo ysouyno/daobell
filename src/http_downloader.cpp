@@ -1,4 +1,5 @@
 #include "http_downloader.h"
+#include "progress_bar.h"
 
 void *thread_proc(void *param)
 {
@@ -24,6 +25,8 @@ void http_downloader::download_file()
       vec_sp_hmtd_.push_back(std::make_shared<http_multi_threads_downloader>(url_, thread_count_, i));
     }
 
+    progress_bar<std::vector<std::shared_ptr<http_multi_threads_downloader> > > pb(vec_sp_hmtd_.at(0)->get_file_size());
+
     for (std::vector<std::shared_ptr<http_multi_threads_downloader> >::iterator it = vec_sp_hmtd_.begin(); it != vec_sp_hmtd_.end(); ++it) {
       pthread_attr_t pat;
       pthread_attr_init(&pat);
@@ -32,9 +35,9 @@ void http_downloader::download_file()
       pthread_attr_destroy(&pat);
       tid_index++;
     }
-  }
 
-  getchar();
+    pb.print_progress(vec_sp_hmtd_);
+  }
 
   merge_file();
 }
