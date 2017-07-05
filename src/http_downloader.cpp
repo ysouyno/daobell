@@ -67,7 +67,8 @@ void http_downloader::merge_file()
     int rt = 0;
     char buff[1024] = {0};
 
-    if ((fp_temp = fopen((*it)->get_dest_file_name_temp().c_str(), "r")) < 0) {
+    // need use "rb", or while(true) will exec once in windows
+    if ((fp_temp = fopen((*it)->get_dest_file_name_temp().c_str(), "rb")) < 0) {
       log_e("fopen() %s error: %d\n", (*it)->get_dest_file_name_temp().c_str(), errno);
       break;
     }

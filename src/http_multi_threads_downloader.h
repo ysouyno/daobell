@@ -8,8 +8,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
-#include "url_parse.h"
-#include "http_header_parse.h"
+#include "url_parser.h"
+#include "http_header_parser.h"
 #include "log_wrapper.h"
 
 class http_multi_threads_downloader
@@ -81,13 +81,13 @@ private:
   std::string file_name_temp_;
   std::string dest_file_name_;
   std::string dest_file_name_temp_;
-  url_parse up_;
+  url_parser up_;
   size_t thread_count_;
   size_t thread_offset_beg_;
   size_t thread_offset_end_;
   size_t thread_file_size_;
   size_t file_size_;
-  size_t current_thread_index_; // from 0 to thread_count_
+  size_t current_thread_index_; // from 0 to thread_count_ - 1
   int sock_;
   FILE *fp_;
 };

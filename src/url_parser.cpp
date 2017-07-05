@@ -1,11 +1,11 @@
-#include "url_parse.h"
+#include "url_parser.h"
 
-url_parse::url_parse(const std::string &url) : url_(url)
+url_parser::url_parser(const std::string &url) : url_(url)
 {
   parse();
 }
 
-void url_parse::parse()
+void url_parser::parse()
 {
   if (url_.empty()) {
     log_e("url is null\n");
@@ -24,11 +24,11 @@ void url_parse::parse()
     fragment_ = std::string(what[6].first, what[6].second);
   }
   else {
-    log_w("url_parse()::parse input url not http\n");
+    log_w("url_parser()::parse input url not http\n");
   }
 }
 
-void url_parse::parse(const std::string &url)
+void url_parser::parse(const std::string &url)
 {
   if (url.empty()) {
     log_e("url is null\n");
