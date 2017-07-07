@@ -54,9 +54,8 @@ private:
 
     printf("[");
     for (j = 0; j < i; ++j) {
-      printf("=");
+      printf("#");
     }
-    printf(">");
     for (; j < 50.0; ++j) {
       printf(" ");
     }

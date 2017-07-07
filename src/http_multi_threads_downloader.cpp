@@ -114,6 +114,9 @@ int http_multi_threads_downloader::gen_range_header(std::string &out)
   thread_file_size_ = file_size_ / thread_count_;
   thread_offset_beg_ = current_thread_index_ * thread_file_size_;
   thread_offset_end_ = thread_offset_beg_ + thread_file_size_ - 1;
+  if (current_thread_index_ == thread_count_ - 1) {
+    thread_offset_end_ = file_size_;
+  }
 
   out.clear();
 
