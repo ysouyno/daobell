@@ -71,7 +71,7 @@ int ftp_downloader()
     return -1;
   }
 
-  // server respond "331 User name okay, need password."
+  // server respond "331 Password required for anonymous"
   rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
   if (-1 == rt) {
     log_e("recv error: %d\n", errno);
@@ -88,7 +88,7 @@ int ftp_downloader()
     return -1;
   }
 
-  // server respond "230 User logged in, proceed."
+  // server respond "230 Logged on"
   rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
   if (-1 == rt) {
     log_e("recv error: %d\n", errno);
@@ -169,7 +169,7 @@ int ftp_downloader()
     return -1;
   }
 
-  // server respond "250 Command okay."
+  // server respond "250 CWD successful."
   rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
   if (-1 == rt) {
     log_e("recv error: %d\n", errno);
@@ -207,7 +207,7 @@ int ftp_downloader()
     return -1;
   }
 
-  // server respond "150 Opening data connection."
+  // server respond "150 Opening data channel for file download from server of filename"
   rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
   if (-1 == rt) {
     log_e("recv error: %d\n", errno);
@@ -229,8 +229,34 @@ int ftp_downloader()
 
   std::cout << "get file done, " << downloaded << " bytes received" << std::endl;
 
-  close(ctrl_sock);
   close(data_sock);
+
+  // server respond "226 Successfully transferred"
+  rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
+  if (-1 == rt) {
+    log_e("recv error: %d\n", errno);
+    close(ctrl_sock);
+    return -1;
+  }
+
+  // send "QUIT\r\n"
+  sprintf(send_buf, "QUIT\r\n");
+  rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
+  if (-1 == rt) {
+    log_e("send error: %d\n", errno);
+    close(ctrl_sock);
+    return -1;
+  }
+
+  // server respond "200 Closes connection"
+  rt = recv(ctrl_sock, read_buf, sizeof(read_buf) - 1, 0);
+  if (-1 == rt) {
+    log_e("recv error: %d\n", errno);
+    close(ctrl_sock);
+    return -1;
+  }
+
+  close(ctrl_sock);
 
   return 0;
 }
