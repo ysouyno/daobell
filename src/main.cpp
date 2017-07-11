@@ -1,4 +1,5 @@
 #include "http_downloader.h"
+#include "ftp_downloader.h"
 
 int main(int argc, char *argv[])
 {
@@ -7,8 +8,10 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  http_downloader hd(argv[1], 2);
-  hd.download_file();
+  // http_downloader hd(argv[1], 2);
+  // hd.download_file();
+
+  ftp_downloader();
 
   return 0;
 }
