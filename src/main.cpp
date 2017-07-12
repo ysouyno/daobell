@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
   // hd.download_file();
 
   // just test parse ftp url
-  ftp_url_parser fup("ftp://127.0.0.1:21/1024_lnk.txt");
+  ftp_url_parser fup("ftp://127.0.0.1:21/w@w/1024_lnk.txt");
   fup.print_all();
 
   ftp_downloader fd(argv[1]);

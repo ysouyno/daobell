@@ -16,11 +16,35 @@ int ftp_url_parser::parse()
     return -1;
   }
 
-  // TODO: if filename contain '@', parse url will occur errors
+  // TODO: if filename contains '@', parse url will occur errors
   // if user is anonymous and '@' is found, indicating after domain
   // name must have '/', like "ftp://127.0.0.1/@filename"
   size_t pos1 = url_.find_first_of(protocol_delimiter);
   size_t pos2 = url_.find_first_of('@');
+
+  if (std::string::npos != pos2) {
+    // after finding '@', there are three cases
+    // case 1: [*] user mode
+    // case 2: [ ] anonymous mode, the filename contains '@'
+    // case 3: [*] user mode, the filename contains '@',
+    //             - which means that more than one '@' exists
+
+    // at this time case 1 and case 3 have been covered, so
+    // the following to deal with case 2
+    const char *p = url_.c_str();
+    const char *org_p = p;
+    const char *new_p = p;
+
+    while (*p++) {
+      size_t new_org_distance = 0;
+      if ((new_p = strstr(p, "/")) != NULL && (new_org_distance = new_p - org_p) > strlen(ftp_protocol)) {
+        if (new_org_distance < pos2) {
+          pos2 = std::string::npos;
+        }
+      }
+    }
+  }
+
   std::string domain_port;
 
   if (std::string::npos != pos1 && std::string::npos != pos2) {
