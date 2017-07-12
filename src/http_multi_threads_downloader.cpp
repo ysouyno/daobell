@@ -2,7 +2,7 @@
 
 int http_multi_threads_downloader::init()
 {
-  up_.parse(url_);
+  hup_.parse(url_);
 
   if (connect_server() < 0) {
     log_e("connect_server() error\n");
@@ -31,7 +31,7 @@ int http_multi_threads_downloader::connect_server()
     return -1;
   }
 
-  hostent *p = gethostbyname(up_.domain_.c_str());
+  hostent *p = gethostbyname(hup_.domain_.c_str());
   if (sock_ < 0) {
     log_e("gethostbyname() error: %d\n", errno);
     return -1;
@@ -87,17 +87,17 @@ int http_multi_threads_downloader::send_request_query_http_header()
 
 int http_multi_threads_downloader::gen_request_header(std::string &out)
 {
-  if (!up_.valid()) {
-    log_e("up_ is invalid\n");
+  if (!hup_.valid()) {
+    log_e("hup_ is invalid\n");
     return -1;
   }
 
   out.clear();
 
   out += "GET ";
-  out += up_.path_;
+  out += hup_.path_;
   out += " HTTP/1.1\r\nHost: ";
-  out += up_.domain_;
+  out += hup_.domain_;
   out += "\r\nConnection: Close\r\n\r\n";
 
   return 0;
@@ -105,8 +105,8 @@ int http_multi_threads_downloader::gen_request_header(std::string &out)
 
 int http_multi_threads_downloader::gen_range_header(std::string &out)
 {
-  if (!up_.valid()) {
-    log_e("up_ is invalid\n");
+  if (!hup_.valid()) {
+    log_e("hup_ is invalid\n");
     return -1;
   }
 
@@ -121,9 +121,9 @@ int http_multi_threads_downloader::gen_range_header(std::string &out)
   out.clear();
 
   out = "GET ";
-  out += up_.path_;
+  out += hup_.path_;
   out += " HTTP/1.1\r\nHost: ";
-  out += up_.domain_;
+  out += hup_.domain_;
   out += "\r\nConnection: Close\r\n";
   out += "Range: bytes=";
   out += std::to_string(thread_offset_beg_);
@@ -154,14 +154,14 @@ int http_multi_threads_downloader::send_range_request(const std::string &header)
 
 int http_multi_threads_downloader::get_dest_file_name(std::string &out)
 {
-  if (!up_.valid()) {
-    log_e("up_ is invalid\n");
+  if (!hup_.valid()) {
+    log_e("hup_ is invalid\n");
     return -1;
   }
 
-  size_t pos = up_.path_.find_last_of('/');
+  size_t pos = hup_.path_.find_last_of('/');
   if (std::string::npos != pos) {
-    out = up_.path_.substr(pos + 1, up_.path_.size());
+    out = hup_.path_.substr(pos + 1, hup_.path_.size());
   }
 
   return 0;

@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
-#include "url_parser.h"
+#include "http_url_parser.h"
 #include "http_header_parser.h"
 #include "log_wrapper.h"
 
@@ -91,7 +91,7 @@ private:
   std::string file_name_temp_;
   std::string dest_file_name_;
   std::string dest_file_name_temp_;
-  url_parser up_;
+  http_url_parser hup_;
   size_t thread_count_;
   size_t thread_offset_beg_;
   size_t thread_offset_end_;

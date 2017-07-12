@@ -1,20 +1,20 @@
-#ifndef URL_PARSER_H
-#define URL_PARSER_H
+#ifndef HTTP_URL_PARSER_H
+#define HTTP_URL_PARSER_H
 
 #include <string>
 #include <boost/regex.hpp>
 #include "log_wrapper.h"
 
-// why url_parser struct occur link error see below?
-// "multiple definition of `url_parser::url_parser(std::string const&)'"
+// why http_url_parser struct occur link error see below?
+// "multiple definition of `http_url_parser::http_url_parser(std::string const&)'"
 // change struct to class
 
-class url_parser
+class http_url_parser
 {
 public:
-  url_parser() {}
-  ~url_parser() {}
-  url_parser(const std::string &url);
+  http_url_parser() {}
+  ~http_url_parser() {}
+  http_url_parser(const std::string &url);
 
   void parse();
   void parse(const std::string &url);
@@ -46,4 +46,4 @@ public:
   std::string fragment_;
 };
 
-#endif /* URL_PARSER_H */
+#endif /* HTTP_URL_PARSER_H */
