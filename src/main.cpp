@@ -12,11 +12,12 @@ int main(int argc, char *argv[])
   // http_downloader hd(argv[1], 2);
   // hd.download_file();
 
-  // ftp_downloader();
+  // just test parse ftp url
   ftp_url_parser fup("ftp://127.0.0.1:21/1024_lnk.txt");
   fup.print_all();
 
-  ftp_downloader(argv[1]);
+  ftp_downloader fd(argv[1]);
+  fd.download_it();
 
   return 0;
 }
