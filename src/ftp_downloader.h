@@ -6,16 +6,16 @@
 #include <stdio.h>
 #include <vector>
 #include <sstream>
+#include <string>
+#include "ftp_url_parser.h"
 #include "log_wrapper.h"
 
 #define BUFFER_SIZE 1024
-#define FTP_HOST "192.168.1.109"
-#define FTP_PORT 21
-#define FTP_USER "anonymous"
-#define FTP_PASS ""
 
-int ftp_downloader()
+int ftp_downloader(const std::string &url)
 {
+  ftp_url_parser fup(url);
+
   int ctrl_sock = 0;
   int data_sock = 0;
   struct hostent *p;
@@ -32,7 +32,7 @@ int ftp_downloader()
     return -1;
   }
 
-  p = gethostbyname(FTP_HOST);
+  p = gethostbyname(fup.domain_.c_str());
   if (0 == p) {
     log_e("gethostbyname error: %d\n", errno);
     close(ctrl_sock);
@@ -41,7 +41,9 @@ int ftp_downloader()
 
   memcpy(&sa.sin_addr, p->h_addr, p->h_length);
   sa.sin_family = AF_INET;
-  sa.sin_port = htons(FTP_PORT);
+  size_t port_temp = 0;
+  std::istringstream(fup.port_) >> port_temp;
+  sa.sin_port = htons(port_temp);
 
   // connect to ftp server
   int rt = connect(ctrl_sock, (struct sockaddr *)&sa, sizeof(sa));
@@ -63,7 +65,7 @@ int ftp_downloader()
   std::cout << "welcome message: \n" << temp_buf << std::endl;
 
   // send "USER username\r\n"
-  sprintf(send_buf, "USER %s\r\n", FTP_USER);
+  sprintf(send_buf, "USER %s\r\n", fup.user_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);
@@ -80,7 +82,7 @@ int ftp_downloader()
   }
 
   // send "PASS password\r\n"
-  sprintf(send_buf, "PASS %s\r\n", FTP_PASS);
+  sprintf(send_buf, "PASS %s\r\n", fup.pass_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);
@@ -160,7 +162,7 @@ int ftp_downloader()
   }
 
   // send "CWD directory\r\n"
-  sprintf(send_buf, "CWD %s\r\n", "/");
+  sprintf(send_buf, "CWD %s\r\n", fup.path_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);
@@ -179,7 +181,7 @@ int ftp_downloader()
   }
 
   // send "SIZE filename\r\n"
-  sprintf(send_buf, "SIZE %s\r\n", "underscore_filename_demo.txt");
+  sprintf(send_buf, "SIZE %s\r\n", fup.file_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);
@@ -198,7 +200,7 @@ int ftp_downloader()
   }
 
   // send "RETR filename\r\n"
-  sprintf(send_buf, "RETR %s\r\n", "underscore_filename_demo.txt");
+  sprintf(send_buf, "RETR %s\r\n", fup.file_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);
