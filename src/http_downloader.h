@@ -13,7 +13,7 @@ public:
   http_downloader() {}
   ~http_downloader() {}
 
-  http_downloader(const std::string &url, const size_t thread_count = 1) :
+  explicit http_downloader(const std::string &url, const size_t thread_count = 1) :
     url_(url),
     thread_count_(thread_count)
   {

@@ -75,7 +75,7 @@ int ftp_downloader::download_it()
   }
 
   // send "PASS password\r\n"
-  sprintf(send_buf, "PASS %s\r\n", fup.pass_.c_str());
+  sprintf(send_buf, "PASS %s\r\n", fup.password_.c_str());
   rt = send(ctrl_sock, send_buf, strlen(send_buf), 0);
   if (-1 == rt) {
     log_e("send error: %d\n", errno);

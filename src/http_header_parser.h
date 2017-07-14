@@ -11,7 +11,7 @@ class http_header_parser
 {
 public:
   http_header_parser() {}
-  http_header_parser(const char *str);
+  explicit http_header_parser(const char *str);
   ~http_header_parser() = default;
 
   void print();

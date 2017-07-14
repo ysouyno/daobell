@@ -21,7 +21,7 @@ public:
   ftp_downloader() {}
   ~ftp_downloader() {}
 
-  ftp_downloader(const std::string &url) : url_(url)
+  explicit ftp_downloader(const std::string &url) : url_(url)
   {
   }
 

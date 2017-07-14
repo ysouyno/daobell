@@ -49,23 +49,23 @@ int ftp_url_parser::parse()
 
   if (std::string::npos != pos1 && std::string::npos != pos2) {
     log_t("ftp user mode\n");
-    std::string user_pass = url_.substr(pos1 + strlen(protocol_delimiter),
+    std::string user_password = url_.substr(pos1 + strlen(protocol_delimiter),
                                         pos2 - pos1 - strlen(protocol_delimiter));
-    size_t pos = user_pass.find_first_of(':');
+    size_t pos = user_password.find_first_of(':');
     if (std::string::npos == pos) {
       log_e("parse user and password from url error\n");
       return -1;
     }
 
-    user_ = user_pass.substr(0, pos);
-    pass_ = user_pass.substr(pos + 1, user_pass.size() - pos - 1);
+    user_ = user_password.substr(0, pos);
+    password_ = user_password.substr(pos + 1, user_password.size() - pos - 1);
 
     domain_port = url_.substr(pos2 + 1, url_.size() - pos - 1);
   }
   else {
     log_t("ftp anonymous mode\n");
     user_ = "anonymous";
-    pass_ = "anonymous";
+    password_ = "anonymous";
 
     domain_port = url_.substr(pos1 + strlen(protocol_delimiter),
                               url_.size() - pos1 - strlen(protocol_delimiter));
@@ -123,11 +123,11 @@ int ftp_url_parser::parse()
 
 void ftp_url_parser::print_all()
 {
-  std::cout << "   url_: " << url_ << std::endl;
-  std::cout << "  user_: " << user_ << std::endl;
-  std::cout << "  pass_: " << pass_ << std::endl;
-  std::cout << "domain_: " << domain_ << std::endl;
-  std::cout << "  port_: " << port_ << std::endl;
-  std::cout << "  path_: " << path_ << std::endl;
-  std::cout << "  file_: " << file_ << std::endl;
+  std::cout << "     url_: " << url_ << std::endl;
+  std::cout << "    user_: " << user_ << std::endl;
+  std::cout << "password_: " << password_ << std::endl;
+  std::cout << "  domain_: " << domain_ << std::endl;
+  std::cout << "    port_: " << port_ << std::endl;
+  std::cout << "    path_: " << path_ << std::endl;
+  std::cout << "    file_: " << file_ << std::endl;
 }

@@ -110,7 +110,8 @@ size_t console_log::append_time(std::string &out)
   timeinfo = localtime(&rawtime);
 
   char time_buf[32] = {0};
-  sprintf(time_buf, "[%02d:%02d:%02d] ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  sprintf(time_buf, "[%02d:%02d:%02d] ",
+          timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 
   out += time_buf;
   return 0;

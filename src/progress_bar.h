@@ -1,8 +1,11 @@
+#ifndef PROGRESS_BAR_H
+#define PROGRESS_BAR_H
+
 template <typename T>
 class progress_bar
 {
 public:
-  progress_bar(size_t total) : total_(total)
+  explicit progress_bar(size_t total) : total_(total)
   {
   }
 
@@ -62,10 +65,12 @@ private:
     printf("]");
 
     if (download_speed < 1024) {
-      printf("%5.2f%% %.0f kb/s time remaining(s): %zu", i * 2, download_speed, time_remaining);
+      printf("%5.2f%% %.0f kb/s time remaining(s): %zu",
+             i * 2, download_speed, time_remaining);
     }
     else {
-      printf("%5.2f%% %.0f mb/s time remaining(s): %zu", i * 2, download_speed / 1024.0, time_remaining);
+      printf("%5.2f%% %.0f mb/s time remaining(s): %zu",
+             i * 2, download_speed / 1024.0, time_remaining);
     }
 
     if (50.0 == i || downloaded_size >= total_) {
@@ -81,3 +86,5 @@ private:
 
   size_t total_;
 };
+
+#endif /* PROGRESS_BAR_H */

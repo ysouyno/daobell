@@ -14,7 +14,7 @@ public:
   ftp_url_parser() {}
   ~ftp_url_parser() {}
 
-  ftp_url_parser(const std::string &url) : url_(url)
+  explicit ftp_url_parser(const std::string &url) : url_(url)
   {
     parse();
   }
@@ -27,7 +27,7 @@ private:
 public:
   std::string url_;
   std::string user_;
-  std::string pass_;
+  std::string password_;
   std::string domain_;
   std::string port_;
   std::string path_;

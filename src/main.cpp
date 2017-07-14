@@ -9,15 +9,15 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // http_downloader hd(argv[1], 2);
-  // hd.download_file();
+  http_downloader hd(argv[1]);
+  hd.download_file();
 
   // just test parse ftp url
   ftp_url_parser fup("ftp://127.0.0.1:21/w@w/1024_lnk.txt");
   fup.print_all();
 
-  ftp_downloader fd(argv[1]);
-  fd.download_it();
+  // ftp_downloader fd(argv[1]);
+  // fd.download_it();
 
   return 0;
 }

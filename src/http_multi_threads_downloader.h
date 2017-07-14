@@ -28,7 +28,7 @@ public:
     }
   }
 
-  http_multi_threads_downloader(const std::string &url, size_t thread_count = 1, size_t thread_index = 0) :
+  explicit http_multi_threads_downloader(const std::string &url, size_t thread_count = 1, size_t thread_index = 0) :
     url_(url),
     thread_count_(thread_count),
     current_thread_index_(thread_index),
