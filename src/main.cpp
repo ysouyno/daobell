@@ -1,6 +1,7 @@
 #include "http_downloader.h"
 #include "ftp_downloader.h"
 #include "ftp_url_parser.h"
+#include "bencode_parser.h"
 
 int main(int argc, char *argv[])
 {
@@ -9,8 +10,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  http_downloader hd(argv[1]);
-  hd.download_file();
+  // http_downloader hd(argv[1]);
+  // hd.download_file();
 
   // just test parse ftp url
   ftp_url_parser fup("ftp://127.0.0.1:21/w@w/1024_lnk.txt");
@@ -18,6 +19,11 @@ int main(int argc, char *argv[])
 
   // ftp_downloader fd(argv[1]);
   // fd.download_it();
+
+  // just test parse bencode
+  std::ifstream file(argv[1], std::ios::binary);
+  bencode_parser bp(file);
+  bp.print_all();
 
   return 0;
 }
