@@ -23,7 +23,12 @@ int main(int argc, char *argv[])
   // just test parse bencode
   std::ifstream file(argv[1], std::ios::binary);
   bencode_parser bp(file);
-  bp.print_all();
+  // bp.print_all();
+
+  std::shared_ptr<bencode_member> sp_bm = bp.get_value();
+  bencode_collector bc(sp_bm);
+  // bc.print_all();
+  bc.print_multimap();
 
   return 0;
 }
