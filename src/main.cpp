@@ -26,9 +26,8 @@ int main(int argc, char *argv[])
   // bp.print_all();
 
   std::shared_ptr<bencode_member> sp_bm = bp.get_value();
-  bencode_collector bc(sp_bm);
-  // bc.print_all();
-  bc.print_multimap();
+  bencode_to_map btm(sp_bm);
+  btm.print_multimap();
 
   return 0;
 }

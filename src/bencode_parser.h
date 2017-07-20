@@ -8,9 +8,6 @@
 #include <vector>
 #include <map>
 
-#define KEY_VALUE_DELIMITER "_KEY:VALUE_"
-#define KEY_VALUE_END "\n"
-
 class bencode_string;
 class bencode_integer;
 class bencode_list;
@@ -234,22 +231,22 @@ private:
   std::shared_ptr<bencode_member> value_;
 };
 
-class bencode_collector : public bencode_crawler
+class bencode_to_map : public bencode_crawler
 {
 public:
-  bencode_collector(std::shared_ptr<bencode_member> sp_bencode_parser) :
+  bencode_to_map(std::shared_ptr<bencode_member> sp_bencode_parser) :
     sp_bencode_parser_(sp_bencode_parser)
   {
   }
 
   virtual void crawl(bencode_string *p)
   {
-    bencode_all_string_ += p->get_value();
+    crawl_str_ = p->get_value();
   }
 
   virtual void crawl(bencode_integer *p)
   {
-    bencode_all_string_ += std::to_string(p->get_value());
+    crawl_str_ = std::to_string(p->get_value());
   }
 
   virtual void crawl(bencode_list *p)
@@ -258,9 +255,10 @@ public:
 
     for (std::vector<std::shared_ptr<bencode_member> >::iterator it = value.begin();
          it != value.end(); ++it) {
-      bencode_all_string_ += KEY_VALUE_DELIMITER;
+      std::string key = get_list_name();
       (*it)->crawl(this);
-      bencode_all_string_ += KEY_VALUE_END;
+      // comment: is there a dictionary in a list?
+      multimap_dictionary_.insert(std::make_pair(key, crawl_str_));
     }
   }
 
@@ -271,16 +269,41 @@ public:
     for (std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> >::iterator it = value.begin();
          it != value.end(); ++it) {
       it->first.get()->crawl(this);
-      bencode_all_string_ += KEY_VALUE_DELIMITER;
-      it->second.get()->crawl(this);
-      bencode_all_string_ += KEY_VALUE_END;
+      std::string key = crawl_str_;
+      std::string value = "";
+
+      bencode_dictionary *bd = dynamic_cast<bencode_dictionary *>(it->second.get());
+      bencode_list *bl = dynamic_cast<bencode_list *>(it->second.get());
+
+      if (NULL == bd && NULL == bl) {
+        // neither dictionary nor list
+        // string or integer
+        it->second.get()->crawl(this);
+        value = crawl_str_;
+        multimap_dictionary_.insert(std::make_pair(key, value));
+      }
+      else if (NULL != bd && NULL == bl) {
+        // dictionary
+        it->second.get()->crawl(this);
+        multimap_dictionary_.insert(std::make_pair(key, ""));
+      }
+      else if (NULL == bd && NULL != bl) {
+        // list
+        list_name_ = crawl_str_;
+        it->second.get()->crawl(this);
+      }
     }
+  }
+
+  const std::string &get_list_name() const
+  {
+    return list_name_;
   }
 
   void print_all()
   {
     crawl_all();
-    std::cout << bencode_all_string_ << std::endl;
+    std::cout << crawl_str_ << std::endl;
   }
 
   void crawl_all()
@@ -288,55 +311,25 @@ public:
     sp_bencode_parser_->crawl(this);
   }
 
-  /* FIXME: [ ] parse list type well */
-  /* FIXME: [ ] do not use strtok to find delimiter */
-  void save_to_multimap()
-  {
-    std::string str = bencode_all_string_;
-
-    char *p = strtok(const_cast<char *>(str.c_str()), KEY_VALUE_END);
-    while (p) {
-      std::string temp(p);
-
-      size_t pos1 = temp.find(KEY_VALUE_DELIMITER);
-      size_t pos2 = temp.rfind(KEY_VALUE_DELIMITER);
-
-      if (pos1 == pos2) {
-        std::string key = temp.substr(0, pos1);
-        std::string value = temp.substr(pos1 + strlen(KEY_VALUE_DELIMITER),
-                                        temp.size() - pos1 - strlen(KEY_VALUE_DELIMITER));
-        multimap_dictionary_.insert(std::make_pair(key, value));
-      }
-      else {
-        std::string key = temp.substr(0, pos1);
-        std::string value = "";
-        multimap_dictionary_.insert(std::make_pair(key, value));
-
-        key = temp.substr(pos1 + strlen(KEY_VALUE_DELIMITER),
-                          pos2 - pos1 - strlen(KEY_VALUE_DELIMITER));
-        value = temp.substr(pos2 + strlen(KEY_VALUE_DELIMITER),
-                            temp.size() - pos2 - strlen(KEY_VALUE_DELIMITER));
-        multimap_dictionary_.insert(std::make_pair(key, value));
-      }
-
-      p = strtok(NULL, KEY_VALUE_END);
-    }
-  }
-
   void print_multimap()
   {
     crawl_all();
-    save_to_multimap();
     for (std::multimap<std::string, std::string>::iterator it = multimap_dictionary_.begin();
          it != multimap_dictionary_.end(); ++it) {
-      std::cout << it->first << " : " << it->second << std::endl;
+      if (0 != strcmp(it->first.c_str(), "pieces")) {
+        std::cout << it->first << " : " << it->second << std::endl;
+      }
+      else {
+        std::cout << it->first << " : (" << it->second.size() << ")" << std::endl;
+      }
     }
   }
 
 private:
-  std::string bencode_all_string_;
+  std::string crawl_str_;
   std::shared_ptr<bencode_member> sp_bencode_parser_;
   std::multimap<std::string, std::string> multimap_dictionary_;
+  std::string list_name_;
 };
 
 #endif /* BENCODE_PARSER_H */
