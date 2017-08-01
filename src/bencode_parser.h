@@ -1,148 +1,11 @@
 #ifndef BENCODE_PARSER_H
 #define BENCODE_PARSER_H
 
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <memory>
-#include <vector>
-#include <map>
-
-class bencode_string;
-class bencode_integer;
-class bencode_list;
-class bencode_dictionary;
-
-class bencode_crawler
-{
-public:
-  virtual void crawl(bencode_string *p) = 0;
-  virtual void crawl(bencode_integer *p) = 0;
-  virtual void crawl(bencode_list *p) = 0;
-  virtual void crawl(bencode_dictionary *p) = 0;
-};
-
-class bencode_member
-{
-public:
-  virtual void print_member() = 0;
-  virtual void crawl(bencode_crawler *p) = 0;
-};
-
-class bencode_string : public bencode_member
-{
-public:
-  bencode_string(const std::string &value) :
-    value_(value)
-  {
-  }
-
-  void print_member()
-  {
-    std::cout << value_ << std::endl;
-  }
-
-  void crawl(bencode_crawler *p)
-  {
-    p->crawl(this);
-  }
-
-  const std::string &get_value() const
-  {
-    return value_;
-  }
-
-private:
-  std::string value_;
-};
-
-class bencode_integer : public bencode_member
-{
-public:
-  bencode_integer(long long value) :
-    value_(value)
-  {
-  }
-
-  void print_member()
-  {
-    std::cout << value_ << std::endl;
-  }
-
-  void crawl(bencode_crawler *p)
-  {
-    p->crawl(this);
-  }
-
-  long long get_value() const
-  {
-    return value_;
-  }
-
-private:
-  long long value_;
-};
-
-class bencode_list : public bencode_member
-{
-public:
-  void print_member()
-  {
-    for (std::vector<std::shared_ptr<bencode_member> >::iterator it = value_.begin();
-         it != value_.end(); ++it) {
-      (*it)->print_member();
-    }
-  }
-
-  void crawl(bencode_crawler *p)
-  {
-    p->crawl(this);
-  }
-
-  void insert_to_list(std::shared_ptr<bencode_member> value)
-  {
-    value_.push_back(value);
-  }
-
-  const std::vector<std::shared_ptr<bencode_member> > &get_value() const
-  {
-    return value_;
-  }
-
-private:
-  std::vector<std::shared_ptr<bencode_member> > value_;
-};
-
-class bencode_dictionary : public bencode_member
-{
-public:
-  void print_member()
-  {
-    for (std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> >::iterator it = value_.begin();
-         it != value_.end(); ++it) {
-      it->first.get()->print_member();
-      it->second.get()->print_member();
-    }
-  }
-
-  void crawl(bencode_crawler *p)
-  {
-    p->crawl(this);
-  }
-
-  void insert_to_dictionary(std::shared_ptr<bencode_member> key, std::shared_ptr<bencode_member> value)
-  {
-    value_.insert(std::make_pair(key, value));
-  }
-
-  const std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> > &get_value() const
-  {
-    return value_;
-  }
-
-private:
-  std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> > value_;
-};
+#include "bencode_value_base.h"
+#include "bencode_string.h"
+#include "bencode_integer.h"
+#include "bencode_list.h"
+#include "bencode_dictionary.h"
 
 class bencode_parser
 {
@@ -155,7 +18,7 @@ public:
     value_ = parse(ifs);
   }
 
-  std::shared_ptr<bencode_member> parse(std::ifstream &ifs)
+  std::shared_ptr<bencode_value_base> parse(std::ifstream &ifs)
   {
     char ch = ifs.get();
 
@@ -192,24 +55,24 @@ public:
       bencode_list *bl = new bencode_list();
 
       while (ifs.peek() != 'e') {
-        std::shared_ptr<bencode_member> value = parse(ifs);
+        std::shared_ptr<bencode_value_base> value = parse(ifs);
         bl->insert_to_list(value);
       }
 
       ifs.get();
-      return std::shared_ptr<bencode_member>(bl);
+      return std::shared_ptr<bencode_value_base>(bl);
     }
     case 'd': {
       bencode_dictionary *bd = new bencode_dictionary();
 
       while (ifs.peek() != 'e') {
-        std::shared_ptr<bencode_member> key = parse(ifs);
-        std::shared_ptr<bencode_member> value = parse(ifs);
+        std::shared_ptr<bencode_value_base> key = parse(ifs);
+        std::shared_ptr<bencode_value_base> value = parse(ifs);
         bd->insert_to_dictionary(key, value);
       }
 
       ifs.get();
-      return std::shared_ptr<bencode_member>(bd);
+      return std::shared_ptr<bencode_value_base>(bd);
     }
     default:
       // just return something
@@ -222,114 +85,13 @@ public:
     value_.get()->print_member();
   }
 
-  std::shared_ptr<bencode_member> get_value()
+  std::shared_ptr<bencode_value_base> get_value()
   {
     return value_;
   }
 
 private:
-  std::shared_ptr<bencode_member> value_;
-};
-
-class bencode_to_map : public bencode_crawler
-{
-public:
-  bencode_to_map(std::shared_ptr<bencode_member> sp_bencode_parser) :
-    sp_bencode_parser_(sp_bencode_parser)
-  {
-  }
-
-  virtual void crawl(bencode_string *p)
-  {
-    crawl_str_ = p->get_value();
-  }
-
-  virtual void crawl(bencode_integer *p)
-  {
-    crawl_str_ = std::to_string(p->get_value());
-  }
-
-  virtual void crawl(bencode_list *p)
-  {
-    std::vector<std::shared_ptr<bencode_member> > value = p->get_value();
-
-    for (std::vector<std::shared_ptr<bencode_member> >::iterator it = value.begin();
-         it != value.end(); ++it) {
-      std::string key = get_list_name();
-      (*it)->crawl(this);
-      // comment: is there a dictionary in a list?
-      multimap_dictionary_.insert(std::make_pair(key, crawl_str_));
-    }
-  }
-
-  virtual void crawl(bencode_dictionary *p)
-  {
-    std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> > value = p->get_value();
-
-    for (std::multimap<std::shared_ptr<bencode_member>, std::shared_ptr<bencode_member> >::iterator it = value.begin();
-         it != value.end(); ++it) {
-      it->first.get()->crawl(this);
-      std::string key = crawl_str_;
-      std::string value = "";
-
-      bencode_dictionary *bd = dynamic_cast<bencode_dictionary *>(it->second.get());
-      bencode_list *bl = dynamic_cast<bencode_list *>(it->second.get());
-
-      if (NULL == bd && NULL == bl) {
-        // neither dictionary nor list
-        // string or integer
-        it->second.get()->crawl(this);
-        value = crawl_str_;
-        multimap_dictionary_.insert(std::make_pair(key, value));
-      }
-      else if (NULL != bd && NULL == bl) {
-        // dictionary
-        it->second.get()->crawl(this);
-        multimap_dictionary_.insert(std::make_pair(key, ""));
-      }
-      else if (NULL == bd && NULL != bl) {
-        // list
-        list_name_ = crawl_str_;
-        it->second.get()->crawl(this);
-      }
-    }
-  }
-
-  const std::string &get_list_name() const
-  {
-    return list_name_;
-  }
-
-  void print_all()
-  {
-    crawl_all();
-    std::cout << crawl_str_ << std::endl;
-  }
-
-  void crawl_all()
-  {
-    sp_bencode_parser_->crawl(this);
-  }
-
-  void print_multimap()
-  {
-    crawl_all();
-    for (std::multimap<std::string, std::string>::iterator it = multimap_dictionary_.begin();
-         it != multimap_dictionary_.end(); ++it) {
-      if (0 != strcmp(it->first.c_str(), "pieces")) {
-        std::cout << it->first << " : " << it->second << std::endl;
-      }
-      else {
-        std::cout << it->first << " : (" << it->second.size() << ")" << std::endl;
-      }
-    }
-  }
-
-private:
-  std::string crawl_str_;
-  std::shared_ptr<bencode_member> sp_bencode_parser_;
-  std::multimap<std::string, std::string> multimap_dictionary_;
-  std::string list_name_;
+  std::shared_ptr<bencode_value_base> value_;
 };
 
 #endif /* BENCODE_PARSER_H */
