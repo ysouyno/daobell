@@ -53,7 +53,9 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(std::ifstream &ifs)
     bencode_dictionary *bd = new bencode_dictionary();
 
     while (ifs.peek() != 'e') {
-      std::shared_ptr<bencode_value_base> key = parse(ifs);
+      // key is a string always
+      std::shared_ptr<bencode_value_base> sp_bvb_key = parse(ifs);
+      std::string key = dynamic_cast<bencode_string *>(sp_bvb_key.get())->get_value();
       std::shared_ptr<bencode_value_base> value = parse(ifs);
       bd->insert_to_dictionary(key, value);
     }

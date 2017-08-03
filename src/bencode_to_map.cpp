@@ -30,12 +30,11 @@ void bencode_to_map::crawl(bencode_list *p)
 
 void bencode_to_map::crawl(bencode_dictionary *p)
 {
-  std::multimap<std::shared_ptr<bencode_value_base>, std::shared_ptr<bencode_value_base> > value = p->get_value();
+  std::multimap<std::string, std::shared_ptr<bencode_value_base> > value = p->get_value();
 
-  for (std::multimap<std::shared_ptr<bencode_value_base>, std::shared_ptr<bencode_value_base> >::iterator it = value.begin();
+  for (std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator it = value.begin();
        it != value.end(); ++it) {
-    it->first.get()->crawl(this);
-    std::string key = crawl_str_;
+    std::string key = it->first;
     std::string value = "";
 
     bencode_dictionary *bd = dynamic_cast<bencode_dictionary *>(it->second.get());
