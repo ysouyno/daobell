@@ -22,3 +22,13 @@ const std::vector<std::shared_ptr<bencode_value_base> > &bencode_list::get_value
 {
   return value_;
 }
+
+std::vector<std::shared_ptr<bencode_value_base> >::iterator bencode_list::begin()
+{
+  return value_.begin();
+}
+
+std::vector<std::shared_ptr<bencode_value_base> >::iterator bencode_list::end()
+{
+  return value_.end();
+}

@@ -24,3 +24,24 @@ const std::multimap<std::string, std::shared_ptr<bencode_value_base> > &bencode_
 {
   return value_;
 }
+
+bencode_value_base *bencode_dictionary::get(const std::string &key)
+{
+  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator it = value_.find(key);
+  if (std::end(value_) == it) {
+    return NULL;
+  }
+  else {
+    return it->second.get();
+  }
+}
+
+std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator bencode_dictionary::begin()
+{
+  return value_.begin();
+}
+
+std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator bencode_dictionary::end()
+{
+  return value_.end();
+}

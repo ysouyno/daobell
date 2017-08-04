@@ -18,6 +18,12 @@ public:
 
   const std::multimap<std::string, std::shared_ptr<bencode_value_base> > &get_value() const;
 
+  bencode_value_base *get(const std::string &key);
+
+  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator begin();
+
+  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator end();
+
 private:
   std::multimap<std::string, std::shared_ptr<bencode_value_base> > value_;
 };

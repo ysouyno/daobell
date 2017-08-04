@@ -4,6 +4,7 @@
 #include "bencode_parser.h"
 #include "bencode_to_map.h"
 #include "bencode_reader.h"
+#include "torrent_info.h"
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +35,16 @@ int main(int argc, char *argv[])
   bencode_reader br(sp_bvb);
   std::string announce_str = br.get_announce();
   std::cout << "announce: " << announce_str << std::endl;
+
+  // just for test torrent_info class
+  auto ti = std::make_shared<torrent_info>();
+  get_announce(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+
+  long long piece_length = get_piece_length(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  printf("piece length: %lld\n", piece_length);
+
+  long long creation_date = get_creation_date(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  printf("creation date: %lld\n", creation_date);
 
   return 0;
 }

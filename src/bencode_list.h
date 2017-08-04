@@ -16,6 +16,10 @@ public:
 
   const std::vector<std::shared_ptr<bencode_value_base> > &get_value() const;
 
+  std::vector<std::shared_ptr<bencode_value_base> >::iterator begin();
+
+  std::vector<std::shared_ptr<bencode_value_base> >::iterator end();
+
 private:
   std::vector<std::shared_ptr<bencode_value_base> > value_;
 };
