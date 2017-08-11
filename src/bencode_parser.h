@@ -16,7 +16,11 @@ public:
 
   explicit bencode_parser(std::ifstream &ifs);
 
+  explicit bencode_parser(const char *p);
+
   std::shared_ptr<bencode_value_base> parse(std::ifstream &ifs);
+
+  std::shared_ptr<bencode_value_base> parse(const char *p, const char **end_p);
 
   void print_all();
 

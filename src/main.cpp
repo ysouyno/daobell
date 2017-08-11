@@ -46,5 +46,9 @@ int main(int argc, char *argv[])
   long long creation_date = get_creation_date(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
   printf("creation date: %lld\n", creation_date);
 
+  // test parse bencode from const char *p
+  const char *str_test = "d8:announce41:http://bttracker.debian.org:6969/announce7:comment35:\"Debian CD from cdimage.debian.org\"13:creation datei1497709363e9:httpseedsl85:http://cdimage.debian.org/cdimage/release/9.0.0/iso-cd/debian-9.0.0-amd64-netinst.iso85:http://cdimage.debian.org/cdimage/archive/9.0.0/iso-cd/debian-9.0.0-amd64-netinst.isoe4:infod6:lengthi304087040e4:name30:debian-9.0.0-amd64-netinst.iso12:piece lengthi262144e6:pieces2:abee";
+  bencode_parser bp_const_char(str_test);
+
   return 0;
 }
