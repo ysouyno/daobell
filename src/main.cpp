@@ -4,7 +4,7 @@
 #include "bencode_parser.h"
 #include "bencode_to_map.h"
 #include "bencode_reader.h"
-#include "torrent_info.h"
+#include "torrent_helper.h"
 #include "sha1.h"
 
 int main(int argc, char *argv[])
