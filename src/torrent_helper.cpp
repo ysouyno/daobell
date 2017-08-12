@@ -39,6 +39,8 @@ long long get_piece_length(torrent_info *ti, bencode_dictionary *root)
   bencode_integer *bi = dynamic_cast<bencode_integer *>(info_dict->get("piece length"));
   assert(bi != NULL);
 
+  ti->piece_length_ = bi->get_value();
+
   return bi->get_value();
 }
 
@@ -49,6 +51,8 @@ long long get_creation_date(torrent_info *ti, bencode_dictionary *root)
 
   bencode_integer *bi = dynamic_cast<bencode_integer *>(bvb);
   assert(bi != NULL);
+
+  ti->creation_date_ = bi->get_value();
 
   return bi->get_value();
 }

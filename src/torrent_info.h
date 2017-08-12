@@ -1,6 +1,7 @@
 #ifndef TORRENT_INFO_H
 #define TORRENT_INFO_H
 
+#include <iostream>
 #include <string>
 #include <vector>
 

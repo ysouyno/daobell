@@ -6,6 +6,7 @@
 #include "bencode_reader.h"
 #include "torrent_helper.h"
 #include "sha1.h"
+#include "torrent_downloader.h"
 
 int main(int argc, char *argv[])
 {
@@ -57,6 +58,11 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < DIGEST_LEN; i++) {
     printf("%02X", (unsigned char)sha1_result[i]);
   }
+  printf("\n");
+
+  // test torrent_downloader class
+  torrent_downloader td;
+  td.download_it("/home/ysouyno/dnld/debian-9.0.0-amd64-netinst.iso.torrent", "/home/ysouyno/dnld");
 
   return 0;
 }
