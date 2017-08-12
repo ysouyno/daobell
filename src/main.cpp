@@ -5,6 +5,7 @@
 #include "bencode_to_map.h"
 #include "bencode_reader.h"
 #include "torrent_info.h"
+#include "sha1.h"
 
 int main(int argc, char *argv[])
 {
@@ -49,6 +50,13 @@ int main(int argc, char *argv[])
   // test parse bencode from const char *p
   const char *str_test = "d8:announce41:http://bttracker.debian.org:6969/announce7:comment35:\"Debian CD from cdimage.debian.org\"13:creation datei1497709363e9:httpseedsl85:http://cdimage.debian.org/cdimage/release/9.0.0/iso-cd/debian-9.0.0-amd64-netinst.iso85:http://cdimage.debian.org/cdimage/archive/9.0.0/iso-cd/debian-9.0.0-amd64-netinst.isoe4:infod6:lengthi304087040e4:name30:debian-9.0.0-amd64-netinst.iso12:piece lengthi262144e6:pieces2:abee";
   bencode_parser bp_const_char(str_test);
+
+  std::string sha1_str = "test";
+  char sha1_result[DIGEST_LEN] = {0};
+  sha1_compute(sha1_str.c_str(), sha1_str.size(), sha1_result);
+  for (size_t i = 0; i < DIGEST_LEN; i++) {
+    printf("%02X", (unsigned char)sha1_result[i]);
+  }
 
   return 0;
 }

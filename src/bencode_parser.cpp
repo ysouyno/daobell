@@ -75,7 +75,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(std::ifstream &ifs)
   }
 }
 
-// reference from the BitFiend project(https://github.com/eduard-permyakov/BitFiend.git)
+// reference from the BitFiend project (https://github.com/eduard-permyakov/BitFiend.git)
 std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const char **end_p)
 {
   char ch = *p;
