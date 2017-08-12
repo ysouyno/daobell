@@ -7,6 +7,7 @@
 #include "torrent_helper.h"
 #include "sha1.h"
 #include "torrent_downloader.h"
+#include "bencode_encoder.h"
 
 int main(int argc, char *argv[])
 {
@@ -63,6 +64,11 @@ int main(int argc, char *argv[])
   // test torrent_downloader class
   torrent_downloader td;
   td.download_it("/home/ysouyno/dnld/debian-9.0.0-amd64-netinst.iso.torrent", "/home/ysouyno/dnld");
+
+  // test bencode_encoder class
+  bencode_encoder be(sp_bvb);
+  be.crawl_all();
+  be.print_all();
 
   return 0;
 }
