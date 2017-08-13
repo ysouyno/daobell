@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 
   // test bencode_encoder class
   bencode_encoder be(sp_bvb);
-  be.crawl_all();
-  be.print_all();
+  be.encode();
+  be.print_result();
 
   return 0;
 }

@@ -21,4 +21,6 @@ void torrent_downloader::download_it(const std::string &torrent_file, const std:
        it != ti->announce_list_.end(); ++it) {
     std::cout << "announce: " << it->c_str() << std::endl;
   }
+
+  get_info_hash(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
 }

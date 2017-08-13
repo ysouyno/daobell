@@ -8,9 +8,37 @@ bencode_encoder::~bencode_encoder()
 {
 }
 
-bencode_encoder::bencode_encoder(std::shared_ptr<bencode_value_base> sp_bm) :
-  sp_bm_(sp_bm)
+bencode_encoder::bencode_encoder(std::shared_ptr<bencode_value_base> sp_bvb) :
+  sp_bvb_(sp_bvb)
 {
+}
+
+bencode_encoder::bencode_encoder(bencode_value_base *bvb) :
+  bvb_(bvb)
+{
+}
+
+void bencode_encoder::encode()
+{
+  if (sp_bvb_ != NULL) {
+    sp_bvb_->crawl(this);
+  }
+  else if (bvb_ != NULL) {
+    bvb_->crawl(this);
+  }
+  else {
+    std::cout << "encode nothing" << std::endl;
+  }
+}
+
+void bencode_encoder::print_result()
+{
+  std::cout << "encoded string length: " << encoded_str_.size() << std::endl;
+}
+
+const std::string &bencode_encoder::get_value()
+{
+  return encoded_str_;
 }
 
 void bencode_encoder::crawl(bencode_string *p)
@@ -51,16 +79,4 @@ void bencode_encoder::crawl(bencode_dictionary *p)
   }
 
   encoded_str_ += 'e';
-}
-
-void bencode_encoder::crawl_all()
-{
-  sp_bm_->crawl(this);
-}
-
-void bencode_encoder::print_all()
-{
-  // if the string length is equal to the seed file size,
-  // the encoding is successful
-  std::cout << "\n" << encoded_str_.size() << std::endl;
 }

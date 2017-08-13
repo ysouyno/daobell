@@ -56,3 +56,21 @@ long long get_creation_date(torrent_info *ti, bencode_dictionary *root)
 
   return bi->get_value();
 }
+
+void get_info_hash(torrent_info *ti, bencode_dictionary *root)
+{
+  bencode_value_base *bvb = root->get("info");
+  assert(bvb != NULL);
+
+  bencode_encoder be(bvb);
+  be.encode();
+  be.print_result();
+
+  std::string encoded_info_dict = be.get_value();
+  char sha1_result[20] = {0};
+  sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(), sha1_result);
+  for (size_t i = 0; i < 20; i++) {
+    printf("%02X", (unsigned char)sha1_result[i]);
+  }
+  printf("\n");
+}
