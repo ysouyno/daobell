@@ -74,3 +74,57 @@ void get_info_hash(torrent_info *ti, bencode_dictionary *root)
   }
   printf("\n");
 }
+
+void get_files(torrent_info *ti, bencode_dictionary *root)
+{
+  bencode_value_base *bvb_info = root->get("info");
+  assert(bvb_info != NULL);
+
+  bencode_value_base *bvb_files = dynamic_cast<bencode_dictionary *>(bvb_info)->get("files");
+  if (bvb_files != NULL) {
+    std::cout << "multi files mode" << std::endl;
+
+    bencode_list *files_list = dynamic_cast<bencode_list *>(bvb_files);
+    assert(files_list != NULL);
+
+    for (auto &file : *files_list) {
+      bencode_dictionary *file_dict = dynamic_cast<bencode_dictionary *>(file.get());
+      assert(file_dict != NULL);
+
+      bencode_integer *length = dynamic_cast<bencode_integer *>(file_dict->get("length"));
+      assert(length != NULL);
+
+      bencode_list *file_path_list = dynamic_cast<bencode_list *>(file_dict->get("path"));
+      assert(file_path_list != NULL);
+
+      std::string file_name = "";
+      for (auto &path : *file_path_list) {
+        bencode_string *file_path = dynamic_cast<bencode_string *>(path.get());
+        file_name += file_path->get_value();
+        file_name += '/';
+      }
+
+      // remove the last '/'
+      file_name = file_name.substr(0, file_name.size() - 1);
+
+      auto file_info = std::make_pair(file_name, length->get_value());
+      ti->files_.push_back(file_info);
+    }
+  }
+  else {
+    std::cout << "single file mode" << std::endl;
+
+    bencode_value_base *bvb_length = dynamic_cast<bencode_dictionary *>(bvb_info)->get("length");
+    assert(bvb_length != NULL);
+
+    bencode_integer *length = dynamic_cast<bencode_integer *>(bvb_length);
+
+    bencode_value_base *bvb_name = dynamic_cast<bencode_dictionary *>(bvb_info)->get("name");
+    assert(bvb_name != NULL);
+
+    bencode_string *name = dynamic_cast<bencode_string *>(bvb_name);
+
+    auto file_info = std::make_pair(name->get_value(), length->get_value());
+    ti->files_.push_back(file_info);
+  }
+}

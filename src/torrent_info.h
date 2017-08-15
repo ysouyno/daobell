@@ -14,6 +14,7 @@ struct torrent_info
   long long creation_date_;
   long long piece_length_;
   std::string info_hash_;
+  std::vector<std::pair<std::string, long long> > files_;
 };
 
 #endif /* TORRENT_INFO_H */

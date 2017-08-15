@@ -23,4 +23,11 @@ void torrent_downloader::download_it(const std::string &torrent_file, const std:
   }
 
   get_info_hash(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+
+  get_files(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  std::cout << "get files: " << std::endl;
+  for (std::vector<std::pair<std::string, long long> >::iterator it = ti->files_.begin();
+       it != ti->files_.end(); ++it) {
+    std::cout << "file path + name: " << it->first.c_str() << "\nlength: " << it->second << std::endl;
+  }
 }
