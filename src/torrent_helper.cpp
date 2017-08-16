@@ -84,6 +84,12 @@ void get_files(torrent_info *ti, bencode_dictionary *root)
   if (bvb_files != NULL) {
     std::cout << "multi files mode" << std::endl;
 
+    bencode_value_base *bvb_name = dynamic_cast<bencode_dictionary *>(bvb_info)->get("name");
+    assert(bvb_name != NULL);
+
+    bencode_string *root_dir = dynamic_cast<bencode_string *>(bvb_name);
+    std::string dir_name = root_dir->get_value();
+
     bencode_list *files_list = dynamic_cast<bencode_list *>(bvb_files);
     assert(files_list != NULL);
 
@@ -100,6 +106,9 @@ void get_files(torrent_info *ti, bencode_dictionary *root)
       std::string file_name = "";
       for (auto &path : *file_path_list) {
         bencode_string *file_path = dynamic_cast<bencode_string *>(path.get());
+        // add the root directory
+        file_name += dir_name;
+        file_name += '/';
         file_name += file_path->get_value();
         file_name += '/';
       }
