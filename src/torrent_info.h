@@ -15,6 +15,7 @@ struct torrent_info
   long long piece_length_;
   std::string info_hash_;
   std::vector<std::pair<std::string, long long> > files_;
+  long long files_size_;
 };
 
 #endif /* TORRENT_INFO_H */

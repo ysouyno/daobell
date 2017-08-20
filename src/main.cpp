@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   // test torrent_downloader class
   torrent_downloader td;
   // td.download_it("/home/ysouyno/dnld/debian-9.0.0-amd64-netinst.iso.torrent", "/home/ysouyno/dnld");
-  td.download_it("/home/ysouyno/dnld/debian-9.0.0-amd64-netinst.iso.torrent", "/home/ysouyno/dnld");
+  td.download_it("/home/ysouyno/dnld/multi_files_test.torrent", "/home/ysouyno/dnld");
 
   // test bencode_encoder class
   bencode_encoder be(sp_bvb);

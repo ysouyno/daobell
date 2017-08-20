@@ -24,7 +24,7 @@ void http_url_parser::parse()
     fragment_ = std::string(what[6].first, what[6].second);
   }
   else {
-    log_w("http_url_parser()::parse input url not http\n");
+    log_w("http_url_parser()::parse input url not http/https\n");
   }
 }
 
