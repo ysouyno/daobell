@@ -8,6 +8,87 @@ torrent_downloader::~torrent_downloader()
 {
 }
 
+// TODO: multi files mode connection
+int get_tracker_socket(const http_url_parser &hup)
+{
+  struct addrinfo hints, *tracker, *head;
+  int sockfd;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if (0 != getaddrinfo(hup.domain_.c_str(), hup.port_.c_str(), &hints, &head)) {
+    return -1;
+  }
+
+  for (tracker = head; tracker; tracker = tracker->ai_next) {
+    if ((sockfd = socket(tracker->ai_family, tracker->ai_socktype, tracker->ai_protocol)) < 0) {
+      continue;
+    }
+
+    if (connect(sockfd, tracker->ai_addr, tracker->ai_addrlen) < 0) {
+      close(sockfd);
+      continue;
+    }
+
+    break;
+  }
+
+  if (!tracker) {
+    log_w("cannot to connect to tracker: %s\n", hup.domain_.c_str());
+    freeaddrinfo(head);
+    close(sockfd);
+    return -1;
+  }
+
+  freeaddrinfo(head);
+
+  log_t("%s connected (socket: %d)\n", hup.domain_.c_str(), sockfd);
+
+  return sockfd;
+}
+
+int send_tracker_request(int sockfd, const char *request, size_t length)
+{
+  size_t total_sent = 0;
+
+  while (total_sent < length) {
+    size_t sent = send(sockfd, request, length - total_sent, 0);
+    if (sent < 0) {
+      return -1;
+    }
+
+    total_sent += sent;
+    request += sent;
+  }
+
+  return 0;
+}
+
+int get_tracker_response(int sockfd, std::string &response)
+{
+  size_t total_recv = 0;
+  size_t temp = 0;
+  char buff[2048] = {0};
+
+  response.clear();
+
+  do
+    {
+      temp = recv(sockfd, buff + total_recv, sizeof(buff) - total_recv, 0);
+      if (temp < 0) {
+        return -1;
+      }
+
+      total_recv += temp;
+    } while (temp > 0);
+
+  response += buff;
+
+  return 0;
+}
+
 void *connect_tracker_thread(void *arg)
 {
   log_t("connect_tracker_thread start\n");
@@ -47,6 +128,17 @@ void *connect_tracker_thread(void *arg)
     request_str += "\r\n\r\n";
 
     std::cout << "request string: " << request_str << std::endl;
+
+    // get socket
+    int sockfd = get_tracker_socket(hup);
+
+    send_tracker_request(sockfd, request_str.c_str(), request_str.size());
+
+    std::string response_str;
+    get_tracker_response(sockfd, response_str);
+    log_t("response string: %s\n", response_str.c_str());
+
+    close(sockfd);
   }
 
   return NULL;
