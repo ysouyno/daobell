@@ -69,10 +69,13 @@ void get_info_hash(torrent_info *ti, bencode_dictionary *root)
   std::string encoded_info_dict = be.get_value();
   char sha1_result[20] = {0};
   sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(), sha1_result);
+
+  char temp[8] = {0};
+  ti->info_hash_.clear();
   for (size_t i = 0; i < 20; i++) {
-    printf("%02X", (unsigned char)sha1_result[i]);
+    snprintf(temp, sizeof(temp), "%02X", (unsigned char)sha1_result[i]);
+    ti->info_hash_.append(temp, 2);
   }
-  printf("\n");
 }
 
 void get_files(torrent_info *ti, bencode_dictionary *root)
