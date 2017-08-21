@@ -1,6 +1,6 @@
-#include "daobell_utils.h"
+#include "utils.h"
 
-namespace daobell_utils {
+namespace utils {
 
   std::string fmt(const char *fmt_template, ...)
   {
@@ -79,4 +79,4 @@ namespace daobell_utils {
     }
   }
 
-}  // daobell_utils
+}  // utils

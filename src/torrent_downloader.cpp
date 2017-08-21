@@ -111,14 +111,14 @@ void *connect_tracker_thread(void *arg)
     // convert a hex string to a real hex string ("d4" -> 0xd4)
     assert(!ti->info_hash_.empty());
     std::string hex;
-    daobell_utils::hex_string_to_hex(ti->info_hash_, hex);
+    utils::hex_string_to_hex(ti->info_hash_, hex);
 
     // generate request string
     std::string request_str;
     request_str += "GET ";
     request_str += hup.path_;
     request_str += "?info_hash=";
-    request_str += daobell_utils::percent_encode(hex);
+    request_str += utils::percent_encode(hex);
     request_str += "&peer_id=";
     request_str += "-XXXXXX-%8D%22%8C%EE%A0%5C%FE%83%E6r%9B%BF";
     request_str += "&left=";

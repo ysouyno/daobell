@@ -1,11 +1,11 @@
-#ifndef DAOBELL_UTILS_H
-#define DAOBELL_UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <string>
 #include <algorithm>
 #include <cstdarg>
 
-namespace daobell_utils {
+namespace utils {
 
   std::string fmt(const char *fmt_template, ...);
 
@@ -21,6 +21,6 @@ namespace daobell_utils {
 
   void hex_string_to_hex(const std::string &hex_str, std::string &hex);
 
-}  // daobell_utils
+}  // utils
 
-#endif /* DAOBELL_UTILS_H */
+#endif /* UTILS_H */
