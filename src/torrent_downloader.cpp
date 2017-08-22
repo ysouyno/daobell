@@ -123,6 +123,7 @@ void *connect_tracker_thread(void *arg)
     request_str += "-XXXXXX-%8D%22%8C%EE%A0%5C%FE%83%E6r%9B%BF";
     request_str += "&left=";
     request_str += std::to_string(ti->files_size_);
+    request_str += "&compact=1";
     request_str += " HTTP/1.1\r\nHost: ";
     request_str += hup.domain_;
     request_str += "\r\n\r\n";
