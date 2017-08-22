@@ -32,14 +32,7 @@ void http_header_parser::parse(const char *str)
   parse();
 }
 
-void http_header_parser::print()
-{
-  for (std::map<std::string, std::string>::iterator it = header_map_.begin(); it != header_map_.end(); ++it) {
-    std::cout << it->first << ": " << it->second << std::endl;
-  }
-}
-
-size_t http_header_parser::get_file_size()
+size_t http_header_parser::get_content_length()
 {
   size_t file_size = 0;
   for (std::map<std::string, std::string>::iterator it = header_map_.begin(); it != header_map_.end(); ++it) {
@@ -51,14 +44,26 @@ size_t http_header_parser::get_file_size()
   return file_size;
 }
 
-size_t http_header_parser::get_file_size_number_count()
+size_t http_header_parser::get_content_length_number_count()
 {
   size_t count = 0;
-  size_t file_size = get_file_size();
-  while (file_size > 0) {
+  size_t content_length = get_content_length();
+  while (content_length > 0) {
     count++;
-    file_size /= 10;
+    content_length /= 10;
   }
 
   return count;
+}
+
+const std::string &http_header_parser::get_status()
+{
+  return header_map_.at("Status");
+}
+
+void http_header_parser::print()
+{
+  for (std::map<std::string, std::string>::iterator it = header_map_.begin(); it != header_map_.end(); ++it) {
+    std::cout << it->first << ": " << it->second << std::endl;
+  }
 }

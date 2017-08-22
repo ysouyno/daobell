@@ -77,7 +77,7 @@ int http_multi_threads_downloader::send_request_query_http_header()
   }
 
   http_header_parser hhp(buff);
-  file_size_ = hhp.get_file_size();
+  file_size_ = hhp.get_content_length();
 
   // here need to close socket
   close(sock_);

@@ -10,17 +10,20 @@
 class http_header_parser
 {
 public:
-  http_header_parser() {}
-  explicit http_header_parser(const char *str);
+  http_header_parser() = default;
   ~http_header_parser() = default;
 
-  void print();
-  size_t get_file_size();
-  size_t get_file_size_number_count();
+  explicit http_header_parser(const char *str);
+
   void parse(const char *str);
+  size_t get_content_length();
+  size_t get_content_length_number_count();
+  const std::string &get_status();
+  void print();
 
 private:
   void parse();
+
   std::istringstream header_;
   std::map<std::string, std::string> header_map_;
 };

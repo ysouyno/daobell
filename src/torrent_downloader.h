@@ -12,6 +12,7 @@
 #include "http_url_parser.h"
 #include "log_wrapper.h"
 #include "utils.h"
+#include "http_header_parser.h"
 
 class torrent_downloader
 {

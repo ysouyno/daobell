@@ -66,13 +66,13 @@ int send_tracker_request(int sockfd, const char *request, size_t length)
   return 0;
 }
 
-int get_tracker_response(int sockfd, std::string &response)
+int get_tracker_response_peers(int sockfd, std::string &response_peers)
 {
   size_t total_recv = 0;
   size_t temp = 0;
   char buff[2048] = {0};
 
-  response.clear();
+  response_peers.clear();
 
   do
     {
@@ -84,7 +84,29 @@ int get_tracker_response(int sockfd, std::string &response)
       total_recv += temp;
     } while (temp > 0);
 
-  response += buff;
+  std::string response(buff, total_recv); // need total_recv or segmentation fault
+  http_header_parser hhp(response.c_str());
+
+  if (std::string::npos == hhp.get_status().find("200 OK")) {
+    log_w("cannot to connect to tracker\n");
+    return -1;
+  }
+
+  const char *http_header_end = "\r\n\r\n";
+  size_t pos = response.find(http_header_end);
+  if (std::string::npos == pos) {
+    return -1;
+  }
+
+  response_peers = response.substr(pos + strlen(http_header_end), total_recv);
+  std::cout << response_peers << std::endl;
+
+  return 0;
+}
+
+int parse_tracker_response(const std::string &response_peers)
+{
+  bencode_parser bp(response_peers.c_str());
 
   return 0;
 }
@@ -116,7 +138,7 @@ void *connect_tracker_thread(void *arg)
     // generate request string
     std::string request_str;
     request_str += "GET ";
-    request_str += hup.path_;
+    request_str += hup.path_; // already including '/'
     request_str += "?info_hash=";
     request_str += utils::percent_encode(hex);
     request_str += "&peer_id=";
@@ -135,9 +157,10 @@ void *connect_tracker_thread(void *arg)
 
     send_tracker_request(sockfd, request_str.c_str(), request_str.size());
 
-    std::string response_str;
-    get_tracker_response(sockfd, response_str);
-    log_t("response string: %s\n", response_str.c_str());
+    std::string response_peers;
+    get_tracker_response_peers(sockfd, response_peers);
+
+    parse_tracker_response(response_peers);
 
     close(sockfd);
   }
