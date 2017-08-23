@@ -4,8 +4,18 @@
 #include <string>
 #include <algorithm>
 #include <cstdarg>
+#include <arpa/inet.h>
+#include <string.h>
+#include <netdb.h>
 
 namespace utils {
+
+  union sockaddr_union {
+    sockaddr sa;
+    sockaddr_storage storage;
+    sockaddr_in6 in6;
+    sockaddr_in in;
+  };
 
   std::string fmt(const char *fmt_template, ...);
 
@@ -20,6 +30,10 @@ namespace utils {
   std::string percent_encode(const std::string &target);
 
   void hex_string_to_hex(const std::string &hex_str, std::string &hex);
+
+  int inet_n_top(int af, const void *src, char *dst, socklen_t size);
+
+  std::pair<std::string, uint16_t> unpack_compact(const unsigned char *compact);
 
 }  // utils
 

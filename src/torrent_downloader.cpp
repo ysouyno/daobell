@@ -99,7 +99,7 @@ int get_tracker_response_peers(int sockfd, std::string &response_peers)
   }
 
   response_peers = response.substr(pos + strlen(http_header_end), total_recv);
-  std::cout << response_peers << std::endl;
+  // std::cout << response_peers << std::endl;
 
   return 0;
 }
@@ -107,6 +107,18 @@ int get_tracker_response_peers(int sockfd, std::string &response_peers)
 int parse_tracker_response(const std::string &response_peers)
 {
   bencode_parser bp(response_peers.c_str());
+  std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
+
+  auto ti = std::make_shared<torrent_info>();
+  get_peers(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+
+  // print all peers (format ip:port)
+  if (!ti->peers_.empty()) {
+    for (std::vector<std::pair<std::string, uint16_t> >::iterator it = ti->peers_.begin();
+         it != ti->peers_.end(); ++it) {
+      std::cout << it->first << ":" << it->second << std::endl;
+    }
+  }
 
   return 0;
 }
@@ -150,7 +162,7 @@ void *connect_tracker_thread(void *arg)
     request_str += hup.domain_;
     request_str += "\r\n\r\n";
 
-    std::cout << "request string: " << request_str << std::endl;
+    // std::cout << "request string: " << request_str << std::endl;
 
     // get socket
     int sockfd = get_tracker_socket(hup);

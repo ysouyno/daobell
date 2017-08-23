@@ -146,3 +146,12 @@ void get_files_and_size(torrent_info *ti, bencode_dictionary *root)
     ti->files_.push_back(file_info);
   }
 }
+
+void get_peers(torrent_info *ti, bencode_dictionary *root)
+{
+  bencode_value_base *bvb_peers = root->get("peers");
+  assert(bvb_peers != NULL);
+
+  bencode_peers_crawler bpc(ti, bvb_peers);
+  bpc.parse();
+}

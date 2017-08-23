@@ -13,6 +13,8 @@
 #include "log_wrapper.h"
 #include "utils.h"
 #include "http_header_parser.h"
+#include "torrent_info.h"
+#include "bencode_value_base.h"
 
 class torrent_downloader
 {

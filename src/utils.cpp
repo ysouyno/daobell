@@ -79,4 +79,32 @@ namespace utils {
     }
   }
 
+  int inet_n_top(int af, const void *src, char *dst, socklen_t size)
+  {
+    sockaddr_union su;
+    memset(&su, 0, sizeof(su));
+
+    // for AF_IET
+    su.in.sin_family = AF_INET;
+    memcpy(&su.in.sin_addr, src, sizeof(su.in.sin_addr));
+
+    return getnameinfo(&su.sa, sizeof(su.in), dst, size, nullptr, 0, NI_NUMERICHOST);
+  }
+
+  std::pair<std::string, uint16_t> unpack_compact(const unsigned char *compact)
+  {
+    std::pair<std::string, uint16_t> result;
+    size_t port_offset = 4; // for AF_INET
+
+    char buff[1025] = {0};
+
+    if (inet_n_top(AF_INET, compact, buff, sizeof(buff)) == 0) {
+      result.first = buff;
+      uint16_t port_n = 0;
+      memcpy(&port_n, compact + port_offset, sizeof(port_n));
+      result.second = ntohs(port_n);
+    }
+
+    return result;
+  }
 }  // utils
