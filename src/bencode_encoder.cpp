@@ -9,11 +9,13 @@ bencode_encoder::~bencode_encoder()
 }
 
 bencode_encoder::bencode_encoder(std::shared_ptr<bencode_value_base> sp_bvb) :
-  sp_bvb_(sp_bvb)
+  sp_bvb_(sp_bvb),
+  bvb_(0)
 {
 }
 
 bencode_encoder::bencode_encoder(bencode_value_base *bvb) :
+  sp_bvb_(0),
   bvb_(bvb)
 {
 }

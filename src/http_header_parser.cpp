@@ -1,7 +1,7 @@
 #include "http_header_parser.h"
 
-http_header_parser::http_header_parser(const char *str)
-: header_(str)
+http_header_parser::http_header_parser(const char *str) :
+  header_(str)
 {
   parse();
 }

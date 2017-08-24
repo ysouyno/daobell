@@ -1,6 +1,12 @@
 #include "http_downloader.h"
 #include "progress_bar.h"
 
+http_downloader::http_downloader(const std::string &url, const size_t thread_count) :
+  url_(url),
+  thread_count_(thread_count)
+{
+}
+
 void *http_download_thread(void *arg)
 {
   http_multi_threads_downloader *hmtd = (http_multi_threads_downloader *)arg;

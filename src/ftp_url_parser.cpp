@@ -1,5 +1,11 @@
 #include "ftp_url_parser.h"
 
+ftp_url_parser::ftp_url_parser(const std::string &url) :
+  url_(url)
+{
+  parse();
+}
+
 int ftp_url_parser::parse()
 {
   if (url_.empty()) {

@@ -5,7 +5,7 @@ bencode_reader::bencode_reader(std::shared_ptr<bencode_value_base> sp_bvb) :
 {
 }
 
-std::string bencode_reader::get_announce()
+const std::string &bencode_reader::get_announce()
 {
   bencode_dictionary *bd = dynamic_cast<bencode_dictionary *>(sp_bvb_.get());
   std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict = bd->get_value();

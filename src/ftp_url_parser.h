@@ -11,13 +11,10 @@
 class ftp_url_parser
 {
 public:
-  ftp_url_parser() {}
-  ~ftp_url_parser() {}
+  ftp_url_parser() = default;
+  ~ftp_url_parser() = default;
 
-  explicit ftp_url_parser(const std::string &url) : url_(url)
-  {
-    parse();
-  }
+  explicit ftp_url_parser(const std::string &url);
 
   void print_all();
 

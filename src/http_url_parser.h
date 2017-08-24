@@ -12,8 +12,9 @@
 class http_url_parser
 {
 public:
-  http_url_parser() {}
-  ~http_url_parser() {}
+  http_url_parser() = default;
+  ~http_url_parser() = default;
+
   explicit http_url_parser(const std::string &url);
 
   void parse();

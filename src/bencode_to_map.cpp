@@ -79,6 +79,7 @@ void bencode_to_map::crawl_all()
 void bencode_to_map::print_multimap()
 {
   crawl_all();
+
   for (std::multimap<std::string, std::string>::iterator it = multimap_dictionary_.begin();
        it != multimap_dictionary_.end(); ++it) {
     if (0 != strcmp(it->first.c_str(), "pieces")) {

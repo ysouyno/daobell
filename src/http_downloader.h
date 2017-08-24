@@ -10,14 +10,10 @@
 class http_downloader
 {
 public:
-  http_downloader() {}
-  ~http_downloader() {}
+  http_downloader() = default;
+  ~http_downloader() = default;
 
-  explicit http_downloader(const std::string &url, const size_t thread_count = 1) :
-    url_(url),
-    thread_count_(thread_count)
-  {
-  }
+  explicit http_downloader(const std::string &url, const size_t thread_count = 1);
 
   void download_file();
 

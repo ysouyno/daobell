@@ -16,7 +16,7 @@ public:
 
   explicit bencode_reader(std::shared_ptr<bencode_value_base> sp_bvb);
 
-  std::string get_announce();
+  const std::string &get_announce();
 
 private:
   std::shared_ptr<bencode_value_base> sp_bvb_;

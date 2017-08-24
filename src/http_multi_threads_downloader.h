@@ -15,31 +15,11 @@
 class http_multi_threads_downloader
 {
 public:
-  http_multi_threads_downloader() {}
+  http_multi_threads_downloader() = default;
 
-  ~http_multi_threads_downloader()
-  {
-    if (sock_ > 0) {
-      close(sock_);
-    }
+  ~http_multi_threads_downloader();
 
-    if (fp_ > 0) {
-      fclose(fp_);
-    }
-  }
-
-  explicit http_multi_threads_downloader(const std::string &url, size_t thread_count = 1, size_t thread_index = 0) :
-    url_(url),
-    thread_count_(thread_count),
-    current_thread_index_(thread_index),
-    fp_(NULL),
-    downloaded_size_(0)
-  {
-    if (1 == thread_count_) {
-      log_t("single thread\n");
-      current_thread_index_ = 0;
-    }
-  }
+  explicit http_multi_threads_downloader(const std::string &url, size_t thread_count = 1, size_t thread_index = 0);
 
   size_t get_current_thread_index()
   {

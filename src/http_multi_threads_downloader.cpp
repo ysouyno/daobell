@@ -1,5 +1,29 @@
 #include "http_multi_threads_downloader.h"
 
+http_multi_threads_downloader::~http_multi_threads_downloader()
+{
+  if (sock_ > 0) {
+    close(sock_);
+  }
+
+  if (fp_ > 0) {
+    fclose(fp_);
+  }
+}
+
+http_multi_threads_downloader::http_multi_threads_downloader(const std::string &url, size_t thread_count, size_t thread_index) :
+  url_(url),
+  thread_count_(thread_count),
+  current_thread_index_(thread_index),
+  fp_(NULL),
+  downloaded_size_(0)
+{
+  if (1 == thread_count_) {
+    log_t("single thread\n");
+    current_thread_index_ = 0;
+  }
+}
+
 int http_multi_threads_downloader::init()
 {
   hup_.parse(url_);

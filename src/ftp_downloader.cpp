@@ -1,5 +1,10 @@
 #include "ftp_downloader.h"
 
+ftp_downloader::ftp_downloader(const std::string &url) :
+  url_(url)
+{
+}
+
 int ftp_downloader::download_it()
 {
   if (url_.empty()) {

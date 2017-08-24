@@ -18,12 +18,10 @@
 class ftp_downloader
 {
 public:
-  ftp_downloader() {}
-  ~ftp_downloader() {}
+  ftp_downloader() = default;
+  ~ftp_downloader() = default;
 
-  explicit ftp_downloader(const std::string &url) : url_(url)
-  {
-  }
+  explicit ftp_downloader(const std::string &url);
 
   int download_it();
 

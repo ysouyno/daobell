@@ -5,11 +5,12 @@ template <typename T>
 class progress_bar
 {
 public:
+  progress_bar() = default;
+  ~progress_bar() = default;
+
   explicit progress_bar(size_t total) : total_(total)
   {
   }
-
-  ~progress_bar() = default;
 
   void print_progress(T &t)
   {

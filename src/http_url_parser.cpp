@@ -1,6 +1,7 @@
 #include "http_url_parser.h"
 
-http_url_parser::http_url_parser(const std::string &url) : url_(url)
+http_url_parser::http_url_parser(const std::string &url) :
+  url_(url)
 {
   parse();
 }
