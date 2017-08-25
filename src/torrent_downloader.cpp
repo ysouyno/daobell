@@ -104,13 +104,12 @@ int get_tracker_response_peers(int sockfd, std::string &response_peers)
   return 0;
 }
 
-int parse_tracker_response(const std::string &response_peers)
+int parse_tracker_response(torrent_info *ti, const std::string &response_peers)
 {
   bencode_parser bp(response_peers.c_str());
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
 
-  auto ti = std::make_shared<torrent_info>();
-  get_peers(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  get_peers(ti, dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
 
   // print all peers (format ip:port)
   if (!ti->peers_.empty()) {
@@ -119,6 +118,111 @@ int parse_tracker_response(const std::string &response_peers)
       std::cout << it->first << ":" << it->second << std::endl;
     }
   }
+
+  return 0;
+}
+
+// try connect a peer and get socket
+int get_peer_socket(std::pair<std::string, uint16_t> *peer)
+{
+  int sockfd = 0;
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    return sockfd;
+  }
+
+  sockaddr_in sa;
+  bzero(&sa, sizeof(sockaddr_in));
+  sa.sin_family = AF_INET;
+
+  int rt = bind(sockfd, (sockaddr *)&sa, sizeof(sa));
+  if (sockfd < 0) {
+    log_e("bind() %s error: %d\n", peer->first.c_str(), errno);
+    close(sockfd);
+    return -1;
+  }
+
+  hostent *p = gethostbyname(peer->first.c_str());
+  if (sockfd < 0) {
+    log_e("gethostbyname() %s error: %d\n", peer->first.c_str(), errno);
+    close(sockfd);
+    return -1;
+  }
+
+  sa.sin_port = htons(peer->second);
+  memcpy(&sa.sin_addr, p->h_addr, 4);
+
+  rt = connect(sockfd, (sockaddr *)&sa, sizeof(sa));
+  if (rt < 0) {
+    log_e("connect() %s error: %d\n", peer->first.c_str(), errno);
+    close(sockfd);
+    return -1;
+  }
+
+  fd_set fdset;
+  FD_ZERO(&fdset);
+  FD_SET(sockfd, &fdset);
+
+  struct timeval timeout;
+  timeout.tv_sec = 5; // 5 seconds
+  timeout.tv_usec = 0;
+
+  rt = select(sockfd + 1, NULL, &fdset, NULL, &timeout);
+  if (rt > 0) {
+    int so_error = 0;
+    socklen_t len = sizeof(so_error);
+
+    getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_error, &len);
+    if (so_error) {
+      close(sockfd);
+      return -1;
+    }
+  }
+  else {
+    log_w("peer connection time out\n");
+    close(sockfd);
+    return -1;
+  }
+
+  log_t("connect %s success\n", peer->first.c_str());
+  close(sockfd);
+
+  return 0;
+}
+
+// peer connection thread procedure
+void *peer_connection_thread_proc(void *arg)
+{
+  std::pair<std::string, uint16_t> *peer = (std::pair<std::string, uint16_t> *)arg;
+
+  int sockfd = get_peer_socket(peer);
+  if (sockfd < 0) {
+    return NULL;
+  }
+
+  return NULL;
+}
+
+// create new thread for peer connection
+int create_peer_connection(const std::pair<std::string, uint16_t> &peer)
+{
+  pthread_t tid = 0;
+
+  pthread_create(&tid, NULL, peer_connection_thread_proc, (void *)(&peer));
+
+  return 0;
+}
+
+// create connection for each peer, [ti] including all peers
+int peer_connect(torrent_info *ti)
+{
+  for (std::vector<std::pair<std::string, uint16_t> >::iterator it = ti->peers_.begin();
+       it != ti->peers_.end(); ++it) {
+    create_peer_connection(*it);
+  }
+
+  sleep(16);
 
   return 0;
 }
@@ -172,7 +276,11 @@ void *connect_tracker_thread(void *arg)
     std::string response_peers;
     get_tracker_response_peers(sockfd, response_peers);
 
-    parse_tracker_response(response_peers);
+    parse_tracker_response(ti, response_peers);
+    assert(!ti->peers_.empty());
+
+    // create connection for peers
+    peer_connect(ti);
 
     close(sockfd);
   }
