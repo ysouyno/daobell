@@ -23,4 +23,6 @@ void get_files_and_size(torrent_info *ti, bencode_dictionary *root);
 
 void get_peers(torrent_info *ti, bencode_dictionary *root);
 
+void get_peer_id(torrent_info *ti);
+
 #endif /* TORRENT_HELPER_H */

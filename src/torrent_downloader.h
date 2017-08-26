@@ -17,6 +17,14 @@
 #include "torrent_info.h"
 #include "bencode_value_base.h"
 
+struct peer_thread_arg
+{
+  torrent_info *ti_;
+  std::pair<std::string, uint16_t> *peer_;
+  bool has_torrent_;
+  int sockfd_;
+};
+
 class torrent_downloader
 {
 public:

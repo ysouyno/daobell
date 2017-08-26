@@ -155,3 +155,8 @@ void get_peers(torrent_info *ti, bencode_dictionary *root)
   bencode_peers_crawler bpc(ti, bvb_peers);
   bpc.parse();
 }
+
+void get_peer_id(torrent_info *ti)
+{
+  ti->peer_id_ = "-XXXXXX-%8D%22%8C%EE%A0%5C%FE%83%E6r%9B%BF";
+}

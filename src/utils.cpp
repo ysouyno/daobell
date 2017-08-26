@@ -79,7 +79,7 @@ namespace utils {
     }
   }
 
-  int inet_n_top(int af, const void *src, char *dst, socklen_t size)
+  int inet_n_to_p(int af, const void *src, char *dst, socklen_t size)
   {
     sockaddr_union su;
     memset(&su, 0, sizeof(su));
@@ -98,7 +98,7 @@ namespace utils {
 
     char buff[1025] = {0};
 
-    if (inet_n_top(AF_INET, compact, buff, sizeof(buff)) == 0) {
+    if (inet_n_to_p(AF_INET, compact, buff, sizeof(buff)) == 0) {
       result.first = buff;
       uint16_t port_n = 0;
       memcpy(&port_n, compact + port_offset, sizeof(port_n));
@@ -107,4 +107,5 @@ namespace utils {
 
     return result;
   }
+
 }  // utils

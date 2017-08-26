@@ -31,7 +31,7 @@ namespace utils {
 
   void hex_string_to_hex(const std::string &hex_str, std::string &hex);
 
-  int inet_n_top(int af, const void *src, char *dst, socklen_t size);
+  int inet_n_to_p(int af, const void *src, char *dst, socklen_t size);
 
   std::pair<std::string, uint16_t> unpack_compact(const unsigned char *compact);
 

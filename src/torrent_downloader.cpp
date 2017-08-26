@@ -69,7 +69,7 @@ int send_tracker_request(int sockfd, const char *request, size_t length)
 int get_tracker_response_peers(int sockfd, std::string &response_peers)
 {
   size_t total_recv = 0;
-  size_t temp = 0;
+  int temp = 0;
   char buff[2048] = {0};
 
   response_peers.clear();
@@ -138,14 +138,14 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
 
   int rt = bind(sockfd, (sockaddr *)&sa, sizeof(sa));
   if (sockfd < 0) {
-    log_e("bind() %s error: %d\n", peer->first.c_str(), errno);
+    log_e("bind() error [%s] %s\n", peer->first.c_str(), strerror(errno));
     close(sockfd);
     return -1;
   }
 
   hostent *p = gethostbyname(peer->first.c_str());
   if (sockfd < 0) {
-    log_e("gethostbyname() %s error: %d\n", peer->first.c_str(), errno);
+    log_e("gethostbyname() error [%s] %s\n", peer->first.c_str(), strerror(errno));
     close(sockfd);
     return -1;
   }
@@ -155,7 +155,7 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
 
   rt = connect(sockfd, (sockaddr *)&sa, sizeof(sa));
   if (rt < 0) {
-    log_e("connect() %s error: %d\n", peer->first.c_str(), errno);
+    log_e("connect() error [%s] %s\n", peer->first.c_str(), strerror(errno));
     close(sockfd);
     return -1;
   }
@@ -185,8 +185,136 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
     return -1;
   }
 
-  log_t("connect %s success\n", peer->first.c_str());
-  close(sockfd);
+  log_t("connect [%s] success\n", peer->first.c_str());
+
+  return sockfd;
+}
+
+int send_buff(int sockfd, const char *buff, size_t length)
+{
+  size_t total_sent = 0;
+
+  while (total_sent < length) {
+    size_t sent = send(sockfd, buff, length - total_sent, 0);
+    if (sent < 0) {
+      log_e("send() error %s\n", strerror(errno));
+      return -1;
+    }
+
+    total_sent += sent;
+    buff += sent;
+  }
+
+  return 0;
+}
+
+int send_handshake(int sockfd, torrent_info *ti)
+{
+  const char *pstr = "BitTorrent protocol";
+  unsigned char pstrlen = strlen(pstr);
+  const char reserved[8] = {0};
+
+  // because of info_hash_ is hex string so its size is 40
+  size_t info_hash_length = ti->info_hash_.size() / 2;
+
+  size_t length =
+    1 +
+    pstrlen +
+    sizeof(reserved) +
+    info_hash_length +
+    20; // length of peer_id
+
+  off_t off = 0;
+  char buff[length] = {0};
+
+  buff[0] = pstrlen;
+  off++;
+
+  memcpy(buff + off, pstr, pstrlen);
+  off += pstrlen;
+
+  memcpy(buff + off, reserved, sizeof(reserved));
+  off += sizeof(reserved);
+
+  memcpy(buff + off, ti->info_hash_.c_str(), info_hash_length);
+  off += info_hash_length;
+
+  memcpy(buff + off, ti->peer_id_.c_str(), 20);
+
+  return send_buff(sockfd, buff, length);
+}
+
+int recv_buff(int sockfd, char *buff, size_t length)
+{
+  size_t total_recv = 0;
+  int rt = 0;
+
+  do
+    {
+      rt = recv(sockfd, buff + total_recv, sizeof(buff) - total_recv, 0);
+      std::cout << "rt: " << rt << std::endl;
+      if (rt < 0) {
+        log_e("recv() error %s\n", strerror(errno));
+        close(sockfd);
+        return -1;
+      }
+
+      total_recv += rt;
+    } while (rt > 0 && total_recv < length);
+
+  std::cout << "total_recv: " << total_recv << " length: " << length << std::endl;
+  if (total_recv == length) {
+    return 0;
+  }
+  else {
+    return -1;
+  }
+}
+
+int recv_handshake(int sockfd, char out_info_hash[20], char out_peer_id[20], bool peer_id)
+{
+  const char *pstr = "BitTorrent protocol";
+  unsigned char pstrlen = strlen(pstr);
+  const char reserved[8] = {0};
+
+  size_t length =
+    1 +
+    pstrlen +
+    sizeof(reserved) +
+    sizeof(char[20]) +
+    (peer_id ? 20 : 0);
+
+  char buff[length] = {0};
+  if (recv_buff(sockfd, buff, length)) {
+    log_e("recv_buff() error\n");
+    return -1;
+  }
+
+  off_t off = 0;
+
+  if (buff[off] != pstrlen) {
+    log_e("buff[0] != pstrlen\n");
+    return -1;
+  }
+
+  off++;
+
+  if (strncmp(buff + off, pstr, pstrlen)) {
+    log_e("buff not equal \"BitTorrent protocol\"\n");
+    return -1;
+  }
+
+  off += pstrlen;
+
+  // for size of reserved
+  off += sizeof(reserved);
+
+  memcpy(out_info_hash, buff + off, sizeof(char[20]));
+
+  if (peer_id) {
+    off += sizeof(char[20]);
+    memcpy(out_peer_id, buff + off, sizeof(char[20]));
+  }
 
   return 0;
 }
@@ -194,35 +322,65 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
 // peer connection thread procedure
 void *peer_connection_thread_proc(void *arg)
 {
-  std::pair<std::string, uint16_t> *peer = (std::pair<std::string, uint16_t> *)arg;
+  // std::pair<std::string, uint16_t> *peer = (std::pair<std::string, uint16_t> *)arg;
+  peer_thread_arg *pta = (peer_thread_arg *)arg;
 
-  int sockfd = get_peer_socket(peer);
+  int sockfd = get_peer_socket(pta->peer_);
   if (sockfd < 0) {
     return NULL;
+  }
+
+  torrent_info *ti = NULL;
+  char out_info_hash[20] = {0};
+  char out_peer_id[20] = {0};
+
+  if (pta->has_torrent_) {
+    ti = pta->ti_;
+
+    send_handshake(sockfd, ti);
+    recv_handshake(sockfd, out_info_hash, out_peer_id, true);
+
+    std::cout << "out_info_hash: " << out_info_hash << std::endl;
+    std::cout << "out_peer_id: " << out_peer_id << std::endl;
+  }
+
+  // free it here
+  if (pta != NULL) {
+    free(pta);
   }
 
   return NULL;
 }
 
 // create new thread for peer connection
-int create_peer_connection(const std::pair<std::string, uint16_t> &peer)
+int create_peer_connection(pthread_t *tid, peer_thread_arg *arg)
 {
-  pthread_t tid = 0;
-
-  pthread_create(&tid, NULL, peer_connection_thread_proc, (void *)(&peer));
+  pthread_create(tid, NULL, peer_connection_thread_proc, (void *)(arg));
 
   return 0;
 }
 
 // create connection for each peer, [ti] including all peers
-int peer_connect(torrent_info *ti)
+int peer_connect(std::pair<std::string, uint16_t> *peer, torrent_info *ti)
 {
-  for (std::vector<std::pair<std::string, uint16_t> >::iterator it = ti->peers_.begin();
-       it != ti->peers_.end(); ++it) {
-    create_peer_connection(*it);
-  }
+  pthread_t tid = 0;
 
-  sleep(16);
+  /*
+  std::shared_ptr<peer_thread_arg> sp_pta = std::make_shared<peer_thread_arg>();
+  sp_pta->ti_ = ti;
+  sp_pta->peer_ = peer;
+
+  std::cout << sp_pta.get() << std::endl;
+  */
+
+  // must use malloc or get same address
+  // free it in thread procedure
+  peer_thread_arg *pta = (peer_thread_arg *)malloc(sizeof(peer_thread_arg));
+  pta->ti_ = ti;
+  pta->peer_ = peer;
+  pta->has_torrent_ = true;
+
+  create_peer_connection(&tid, pta);
 
   return 0;
 }
@@ -258,7 +416,7 @@ void *connect_tracker_thread(void *arg)
     request_str += "?info_hash=";
     request_str += utils::percent_encode(hex);
     request_str += "&peer_id=";
-    request_str += "-XXXXXX-%8D%22%8C%EE%A0%5C%FE%83%E6r%9B%BF";
+    request_str += ti->peer_id_;
     request_str += "&left=";
     request_str += std::to_string(ti->files_size_);
     request_str += "&compact=1";
@@ -280,7 +438,12 @@ void *connect_tracker_thread(void *arg)
     assert(!ti->peers_.empty());
 
     // create connection for peers
-    peer_connect(ti);
+    for (size_t i = 0; i < ti->peers_.size(); ++i) {
+      std::pair<std::string, uint16_t> *peer = &(ti->peers_.at(i));
+      peer_connect(peer, ti);
+    }
+
+    sleep(10);
 
     close(sockfd);
   }
@@ -314,6 +477,8 @@ void torrent_downloader::download_it(const std::string &torrent_file, const std:
   */
 
   get_info_hash(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+
+  get_peer_id(ti.get());
 
   get_files_and_size(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
 

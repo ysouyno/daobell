@@ -17,6 +17,7 @@ struct torrent_info
   std::vector<std::pair<std::string, long long> > files_;
   long long files_size_;
   std::vector<std::pair<std::string, uint16_t> > peers_;
+  std::string peer_id_;
 };
 
 #endif /* TORRENT_INFO_H */
