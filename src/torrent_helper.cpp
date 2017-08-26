@@ -158,5 +158,5 @@ void get_peers(torrent_info *ti, bencode_dictionary *root)
 
 void get_peer_id(torrent_info *ti)
 {
-  ti->peer_id_ = "-XXXXXX-%8D%22%8C%EE%A0%5C%FE%83%E6r%9B%BF";
+  ti->peer_id_ = ti->info_hash_;
 }

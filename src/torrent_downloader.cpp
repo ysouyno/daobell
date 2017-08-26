@@ -214,15 +214,18 @@ int send_handshake(int sockfd, torrent_info *ti)
   unsigned char pstrlen = strlen(pstr);
   const char reserved[8] = {0};
 
-  // because of info_hash_ is hex string so its size is 40
-  size_t info_hash_length = ti->info_hash_.size() / 2;
+  std::string hex_info_hash;
+  utils::hex_string_to_hex(ti->info_hash_, hex_info_hash);
+
+  std::string hex_peer_id;
+  utils::hex_string_to_hex(ti->peer_id_, hex_peer_id);
 
   size_t length =
     1 +
     pstrlen +
     sizeof(reserved) +
-    info_hash_length +
-    20; // length of peer_id
+    hex_info_hash.size() +
+    hex_peer_id.size();
 
   off_t off = 0;
   char buff[length] = {0};
@@ -236,10 +239,10 @@ int send_handshake(int sockfd, torrent_info *ti)
   memcpy(buff + off, reserved, sizeof(reserved));
   off += sizeof(reserved);
 
-  memcpy(buff + off, ti->info_hash_.c_str(), info_hash_length);
-  off += info_hash_length;
+  memcpy(buff + off, hex_info_hash.c_str(), hex_info_hash.size());
+  off += hex_info_hash.size();
 
-  memcpy(buff + off, ti->peer_id_.c_str(), 20);
+  memcpy(buff + off, hex_peer_id.c_str(), hex_peer_id.size());
 
   return send_buff(sockfd, buff, length);
 }
@@ -251,8 +254,7 @@ int recv_buff(int sockfd, char *buff, size_t length)
 
   do
     {
-      rt = recv(sockfd, buff + total_recv, sizeof(buff) - total_recv, 0);
-      std::cout << "rt: " << rt << std::endl;
+      rt = recv(sockfd, buff + total_recv, length - total_recv, 0);
       if (rt < 0) {
         log_e("recv() error %s\n", strerror(errno));
         close(sockfd);
@@ -262,7 +264,6 @@ int recv_buff(int sockfd, char *buff, size_t length)
       total_recv += rt;
     } while (rt > 0 && total_recv < length);
 
-  std::cout << "total_recv: " << total_recv << " length: " << length << std::endl;
   if (total_recv == length) {
     return 0;
   }
@@ -339,9 +340,6 @@ void *peer_connection_thread_proc(void *arg)
 
     send_handshake(sockfd, ti);
     recv_handshake(sockfd, out_info_hash, out_peer_id, true);
-
-    std::cout << "out_info_hash: " << out_info_hash << std::endl;
-    std::cout << "out_peer_id: " << out_peer_id << std::endl;
   }
 
   // free it here
@@ -406,17 +404,20 @@ void *connect_tracker_thread(void *arg)
 
     // convert a hex string to a real hex string ("d4" -> 0xd4)
     assert(!ti->info_hash_.empty());
-    std::string hex;
-    utils::hex_string_to_hex(ti->info_hash_, hex);
+    std::string hex_info_hash;
+    utils::hex_string_to_hex(ti->info_hash_, hex_info_hash);
+
+    std::string hex_peer_id;
+    utils::hex_string_to_hex(ti->peer_id_, hex_peer_id);
 
     // generate request string
     std::string request_str;
     request_str += "GET ";
     request_str += hup.path_; // already including '/'
     request_str += "?info_hash=";
-    request_str += utils::percent_encode(hex);
+    request_str += utils::percent_encode(hex_info_hash);
     request_str += "&peer_id=";
-    request_str += ti->peer_id_;
+    request_str += utils::percent_encode(hex_peer_id);
     request_str += "&left=";
     request_str += std::to_string(ti->files_size_);
     request_str += "&compact=1";
