@@ -185,7 +185,7 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
     return -1;
   }
 
-  log_t("connect [%s] success\n", peer->first.c_str());
+  log_t("connect [%s:%d] success\n", peer->first.c_str(), peer->second);
 
   return sockfd;
 }
@@ -341,11 +341,17 @@ void *peer_connection_thread_proc(void *arg)
     send_handshake(sockfd, ti);
     recv_handshake(sockfd, out_info_hash, out_peer_id, true);
   }
+  else {
+    // TODO: if no torrent_info associate to peer, recv handshake to get info_hash
+    // and associated with the torrent_info, then send handshake
+  }
 
   // free it here
   if (pta != NULL) {
     free(pta);
   }
+
+  close(sockfd);
 
   return NULL;
 }
@@ -379,6 +385,7 @@ int peer_connect(std::pair<std::string, uint16_t> *peer, torrent_info *ti)
   pta->has_torrent_ = true;
 
   create_peer_connection(&tid, pta);
+  ti->vec_peer_tid_.push_back(tid);
 
   return 0;
 }
@@ -444,7 +451,11 @@ void *connect_tracker_thread(void *arg)
       peer_connect(peer, ti);
     }
 
-    sleep(10);
+    assert(!ti->vec_peer_tid_.empty());
+    for (std::vector<pthread_t>::iterator it = ti->vec_peer_tid_.begin();
+         it != ti->vec_peer_tid_.end(); ++it) {
+      pthread_join(*it, NULL);
+    }
 
     close(sockfd);
   }

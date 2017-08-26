@@ -18,6 +18,7 @@ struct torrent_info
   long long files_size_;
   std::vector<std::pair<std::string, uint16_t> > peers_;
   std::string peer_id_;
+  std::vector<pthread_t> vec_peer_tid_;
 };
 
 #endif /* TORRENT_INFO_H */

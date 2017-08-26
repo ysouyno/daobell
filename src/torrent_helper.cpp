@@ -158,5 +158,6 @@ void get_peers(torrent_info *ti, bencode_dictionary *root)
 
 void get_peer_id(torrent_info *ti)
 {
+  // just let peer_id be equal to info_hash
   ti->peer_id_ = ti->info_hash_;
 }
