@@ -16,6 +16,7 @@
 #include "http_header_parser.h"
 #include "torrent_info.h"
 #include "bencode_value_base.h"
+#include "peer_message.h"
 
 struct peer_thread_arg
 {

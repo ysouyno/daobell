@@ -190,136 +190,6 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
   return sockfd;
 }
 
-int send_buff(int sockfd, const char *buff, size_t length)
-{
-  size_t total_sent = 0;
-
-  while (total_sent < length) {
-    size_t sent = send(sockfd, buff, length - total_sent, 0);
-    if (sent < 0) {
-      log_e("send() error %s\n", strerror(errno));
-      return -1;
-    }
-
-    total_sent += sent;
-    buff += sent;
-  }
-
-  return 0;
-}
-
-int send_handshake(int sockfd, torrent_info *ti)
-{
-  const char *pstr = "BitTorrent protocol";
-  unsigned char pstrlen = strlen(pstr);
-  const char reserved[8] = {0};
-
-  std::string hex_info_hash;
-  utils::hex_string_to_hex(ti->info_hash_, hex_info_hash);
-
-  std::string hex_peer_id;
-  utils::hex_string_to_hex(ti->peer_id_, hex_peer_id);
-
-  size_t length =
-    1 +
-    pstrlen +
-    sizeof(reserved) +
-    hex_info_hash.size() +
-    hex_peer_id.size();
-
-  off_t off = 0;
-  char buff[length] = {0};
-
-  buff[0] = pstrlen;
-  off++;
-
-  memcpy(buff + off, pstr, pstrlen);
-  off += pstrlen;
-
-  memcpy(buff + off, reserved, sizeof(reserved));
-  off += sizeof(reserved);
-
-  memcpy(buff + off, hex_info_hash.c_str(), hex_info_hash.size());
-  off += hex_info_hash.size();
-
-  memcpy(buff + off, hex_peer_id.c_str(), hex_peer_id.size());
-
-  return send_buff(sockfd, buff, length);
-}
-
-int recv_buff(int sockfd, char *buff, size_t length)
-{
-  size_t total_recv = 0;
-  int rt = 0;
-
-  do
-    {
-      rt = recv(sockfd, buff + total_recv, length - total_recv, 0);
-      if (rt < 0) {
-        log_e("recv() error %s\n", strerror(errno));
-        close(sockfd);
-        return -1;
-      }
-
-      total_recv += rt;
-    } while (rt > 0 && total_recv < length);
-
-  if (total_recv == length) {
-    return 0;
-  }
-  else {
-    return -1;
-  }
-}
-
-int recv_handshake(int sockfd, char out_info_hash[20], char out_peer_id[20], bool peer_id)
-{
-  const char *pstr = "BitTorrent protocol";
-  unsigned char pstrlen = strlen(pstr);
-  const char reserved[8] = {0};
-
-  size_t length =
-    1 +
-    pstrlen +
-    sizeof(reserved) +
-    sizeof(char[20]) +
-    (peer_id ? 20 : 0);
-
-  char buff[length] = {0};
-  if (recv_buff(sockfd, buff, length)) {
-    log_e("recv_buff() error\n");
-    return -1;
-  }
-
-  off_t off = 0;
-
-  if (buff[off] != pstrlen) {
-    log_e("buff[0] != pstrlen\n");
-    return -1;
-  }
-
-  off++;
-
-  if (strncmp(buff + off, pstr, pstrlen)) {
-    log_e("buff not equal \"BitTorrent protocol\"\n");
-    return -1;
-  }
-
-  off += pstrlen;
-
-  // for size of reserved
-  off += sizeof(reserved);
-
-  memcpy(out_info_hash, buff + off, sizeof(char[20]));
-
-  if (peer_id) {
-    off += sizeof(char[20]);
-    memcpy(out_peer_id, buff + off, sizeof(char[20]));
-  }
-
-  return 0;
-}
-
 // peer connection thread procedure
 void *peer_connection_thread_proc(void *arg)
 {
@@ -345,6 +215,22 @@ void *peer_connection_thread_proc(void *arg)
     // TODO: if no torrent_info associate to peer, recv handshake to get info_hash
     // and associated with the torrent_info, then send handshake
   }
+
+  /*
+  peer_msg msg;
+  msg.type_ = PEER_KEEP_ALIVE;
+
+  while (0 == peer_send_msg(sockfd, &msg, ti)) {
+    log_t("message sent, type: %d\n", msg.type_);
+
+    if (!peer_msg_recv(sockfd, &msg, ti)) {
+      log_t("receive message from peer, type: %d\n", msg.type_)
+    }
+    else {
+      log_e("failed to receive response\n");
+    }
+  }
+  */
 
   // free it here
   if (pta != NULL) {
