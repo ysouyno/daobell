@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <netdb.h>
 #include <sys/select.h>
+#include <fcntl.h>
 #include "bencode_parser.h"
 #include "torrent_helper.h"
 #include "torrent_info.h"

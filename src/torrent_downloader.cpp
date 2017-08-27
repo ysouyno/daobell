@@ -99,7 +99,6 @@ int get_tracker_response_peers(int sockfd, std::string &response_peers)
   }
 
   response_peers = response.substr(pos + strlen(http_header_end), total_recv);
-  // std::cout << response_peers << std::endl;
 
   return 0;
 }
@@ -123,11 +122,15 @@ int parse_tracker_response(torrent_info *ti, const std::string &response_peers)
 }
 
 // try connect a peer and get socket
+// use select need (see man socket/connect/select/fcntl):
+// 1, set socket type SOCK_NONBLOCK
+// 2, determine whether the return value of connect is equal to EINPROGRESS
+// 3, fcntl sockfd O_NONBLOCK
 int get_peer_socket(std::pair<std::string, uint16_t> *peer)
 {
   int sockfd = 0;
 
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
   if (sockfd < 0) {
     return sockfd;
   }
@@ -136,15 +139,8 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
   bzero(&sa, sizeof(sockaddr_in));
   sa.sin_family = AF_INET;
 
-  int rt = bind(sockfd, (sockaddr *)&sa, sizeof(sa));
-  if (sockfd < 0) {
-    log_e("bind() error [%s] %s\n", peer->first.c_str(), strerror(errno));
-    close(sockfd);
-    return -1;
-  }
-
   hostent *p = gethostbyname(peer->first.c_str());
-  if (sockfd < 0) {
+  if (NULL == p) {
     log_e("gethostbyname() error [%s] %s\n", peer->first.c_str(), strerror(errno));
     close(sockfd);
     return -1;
@@ -153,8 +149,10 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
   sa.sin_port = htons(peer->second);
   memcpy(&sa.sin_addr, p->h_addr, 4);
 
-  rt = connect(sockfd, (sockaddr *)&sa, sizeof(sa));
-  if (rt < 0) {
+  int rt = connect(sockfd, (sockaddr *)&sa, sizeof(sa));
+  // if the return value is equal to zero or errno equals EINPROGRESS
+  // indicate success, it will not enter the if block
+  if (!(0 == rt || EINPROGRESS == errno)) {
     log_e("connect() error [%s] %s\n", peer->first.c_str(), strerror(errno));
     close(sockfd);
     return -1;
@@ -180,10 +178,14 @@ int get_peer_socket(std::pair<std::string, uint16_t> *peer)
     }
   }
   else {
-    log_w("peer connection time out\n");
+    log_w("peer connection [%s:%d] time out\n", peer->first.c_str(), peer->second);
     close(sockfd);
     return -1;
   }
+
+  int opts = fcntl(sockfd, F_GETFL);
+  opts &= ~O_NONBLOCK;
+  fcntl(sockfd, F_SETFL, opts);
 
   log_t("connect [%s:%d] success\n", peer->first.c_str(), peer->second);
 
@@ -332,12 +334,21 @@ void *connect_tracker_thread(void *arg)
     assert(!ti->peers_.empty());
 
     // create connection for peers
+    /*
     for (size_t i = 0; i < ti->peers_.size(); ++i) {
       std::pair<std::string, uint16_t> *peer = &(ti->peers_.at(i));
       peer_connect(peer, ti);
     }
+    */
+
+    // i do not know how to handle it for now,
+    // just let me deal with one thread first
+    std::pair<std::string, uint16_t> *peer = &(ti->peers_.at(0));
+    peer_connect(peer, ti);
 
     assert(!ti->vec_peer_tid_.empty());
+    log_t("peer thread count: %d\n", ti->vec_peer_tid_.size());
+
     for (std::vector<pthread_t>::iterator it = ti->vec_peer_tid_.begin();
          it != ti->vec_peer_tid_.end(); ++it) {
       pthread_join(*it, NULL);
