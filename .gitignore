@@ -7,3 +7,13 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+
+# eclipse project configuration files
+.cproject
+.project
+
+# executable file
+daobell_main
+
+# build directory
+build/
