@@ -15,7 +15,7 @@ if(THREAD_HAVE_PTHREAD_ARG)
   target_compile_options(PUBLIC daobell_main "-pthread")
 endif()
 
-aux_source_directory(. src)
+aux_source_directory(./src src)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_executable(daobell_main ${src})
