@@ -11,9 +11,11 @@ CTestTestfile.cmake
 # eclipse project configuration files
 .cproject
 .project
+.settings/
 
 # executable file
 daobell_main
+dalbell_test
 
 # build directory
 build/

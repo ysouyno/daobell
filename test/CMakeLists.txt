@@ -1,11 +1,11 @@
 include_directories (${CMAKE_SOURCE_DIR}/src)
-add_executable (run_tests cppunit_demo.cpp)
+add_executable (daobell_test cppunit_demo.cpp)
 
 # post-build
-# add_custom_command (TARGET run_tests POST_BUILD COMMAND
-#   "${CMAKE_SOURCE_DIR}/test/run_tests")
+# add_custom_command (TARGET daobell_test POST_BUILD COMMAND
+#   "${CMAKE_BINARY_DIR}/daobell_test")
 
-add_custom_target (tests "${CMAKE_SOURCE_DIR}/test/run_tests"
-  DEPENDS run_tests COMMENT "Running CPPUNIT tests...")
+add_custom_target (tests "${CMAKE_BINARY_DIR}/daobell_test"
+  DEPENDS daobell_test COMMENT "Running CPPUNIT tests...")
 
-target_link_libraries (run_tests cppunit)
+target_link_libraries (daobell_test cppunit)
