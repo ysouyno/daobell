@@ -12,3 +12,4 @@ find . -name ".project" | xargs rm -rf
 
 # clean executable file
 find . -name "daobell_main" | xargs rm -rf
+find . -name "run_tests" | xargs rm -rf
