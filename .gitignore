@@ -15,7 +15,9 @@ CTestTestfile.cmake
 
 # executable file
 daobell_main
-dalbell_test
+daobell_test
+libdaobell_lib.a
+libdaobell_lib.so
 
 # build directory
 build/

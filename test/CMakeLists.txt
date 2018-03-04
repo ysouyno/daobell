@@ -8,4 +8,4 @@ add_executable (daobell_test cppunit_demo.cpp)
 add_custom_target (tests "${CMAKE_BINARY_DIR}/daobell_test"
   DEPENDS daobell_test COMMENT "Running CPPUNIT tests...")
 
-target_link_libraries (daobell_test cppunit)
+target_link_libraries (daobell_test cppunit daobell_lib)

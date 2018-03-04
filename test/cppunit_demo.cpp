@@ -1,32 +1,38 @@
-#include <cppunit/TestCase.h>
 #include <cppunit/TestResult.h>
 #include <cppunit/TestResultCollector.h>
 #include <cppunit/TextOutputter.h>
+#include <cppunit/TestRunner.h>
+#include <cppunit/extensions/HelperMacros.h>
+#include "../src/ftp_url_parser.h"
 
-class simple_test : public CppUnit::TestCase
+class ftp_url_parser_test : public CppUnit::TestCase
 {
-public:
-    simple_test() {}
-    virtual ~simple_test() {}
+    CPPUNIT_TEST_SUITE(ftp_url_parser_test);
+    CPPUNIT_TEST(test_parse);
+    CPPUNIT_TEST_SUITE_END();
 
-    void runTest()
+public:
+    void test_parse()
     {
-        int i = 0;
-        CPPUNIT_ASSERT_EQUAL(0, i);
+        ftp_url_parser fup("ftp://127.0.0.1:21/w@w/1024_lnk.txt");
+        CPPUNIT_ASSERT("anonymous" == fup.user_);
     }
 };
+
+CPPUNIT_TEST_SUITE_REGISTRATION(ftp_url_parser_test);
 
 int main(int argc, char *argv[])
 {
     CppUnit::TestResult result;
-    CppUnit::TestResultCollector collector;
-    result.addListener(&collector);
+    CppUnit::TestResultCollector result_collector;
+    result.addListener(&result_collector);
 
-    simple_test st;
-    st.run(&result);
+    CppUnit::TestRunner runner;
+    runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
+    runner.run(result);
 
-    CppUnit::TextOutputter output(&collector, std::cout);
+    CppUnit::TextOutputter output(&result_collector, std::cout);
     output.write();
 
-    return 0;
+    return result_collector.wasSuccessful() ? 0 : -1;
 }
