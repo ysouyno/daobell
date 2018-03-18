@@ -1,9 +1,5 @@
-#include <cppunit/TestResult.h>
-#include <cppunit/TestResultCollector.h>
-#include <cppunit/TextOutputter.h>
-#include <cppunit/TestRunner.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include "../src/http_url_parser.h"
+#include "http_url_parser.h"
 
 class http_url_parser_test : public CppUnit::TestFixture
 {

@@ -1,9 +1,5 @@
-#include <cppunit/TestResult.h>
-#include <cppunit/TestResultCollector.h>
-#include <cppunit/TextOutputter.h>
-#include <cppunit/TestRunner.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include "../src/ftp_url_parser.h"
+#include "ftp_url_parser.h"
 
 class ftp_url_parser_test : public CppUnit::TestCase
 {
