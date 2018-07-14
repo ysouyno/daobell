@@ -2,7 +2,6 @@
 #include "ftp_downloader.h"
 #include "ftp_url_parser.h"
 #include "bencode_parser.h"
-#include "bencode_to_map.h"
 #include "bencode_reader.h"
 #include "torrent_helper.h"
 #include "sha1.h"
@@ -32,8 +31,6 @@ int main(int argc, char *argv[])
   // bp.print_all();
 
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
-  bencode_to_map btm(sp_bvb);
-  btm.print_multimap();
 
   bencode_reader br(sp_bvb);
   std::string announce_str = br.get_announce();
