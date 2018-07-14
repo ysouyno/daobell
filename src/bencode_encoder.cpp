@@ -43,6 +43,11 @@ const std::string &bencode_encoder::get_value()
   return encoded_str_;
 }
 
+unsigned long bencode_encoder::get_length()
+{
+  return encoded_str_.size();
+}
+
 void bencode_encoder::crawl(bencode_string *p)
 {
   encoded_str_ += std::to_string(p->get_value().size());

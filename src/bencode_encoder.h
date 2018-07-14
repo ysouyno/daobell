@@ -23,6 +23,7 @@ public:
   void encode();
   void print_result();
   const std::string &get_value();
+  unsigned long get_length();
 
 private:
   virtual void crawl(bencode_string *p);
