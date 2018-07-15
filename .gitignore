@@ -14,10 +14,10 @@ CTestTestfile.cmake
 .settings/
 
 # executable file
-daobell_main
-daobell_test
-libdaobell_lib.a
-libdaobell_lib.so
+daobell
+testdaobell
+libdaobell.a
+libdaobell.so
 
 # build directory
 build/
