@@ -1,7 +1,7 @@
 #include "console_log.h"
 #include "file_log.h"
 
-#define LOG_CONSOLE
+// #define LOG_CONSOLE
 // #define LOG_FILE
 
 class console_log;

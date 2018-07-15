@@ -4,12 +4,12 @@ add_compile_options (-g)
 
 find_package (Boost REQUIRED COMPONENTS regex)
 if (NOT Boost_FOUND)
-  message("No boost regex found")
+  message ("No boost regex found")
 endif ()
 
 find_package (Threads REQUIRED)
 if (THREAD_HAVE_PTHREAD_ARG)
-  target_compile_options(PUBLIC daobell "-pthread")
+  target_compile_options (PUBLIC daobell "-pthread")
 endif ()
 
 # find package cppunit
@@ -31,5 +31,5 @@ endif (BUILD_LIBRARY)
 target_link_libraries (daobell ${Boost_LIBRARIES})
 
 if (CMAKE_THREAD_LIBS_INIT)
-  target_link_libraries(daobell "${CMAKE_THREAD_LIBS_INIT}")
+  target_link_libraries (daobell "${CMAKE_THREAD_LIBS_INIT}")
 endif ()

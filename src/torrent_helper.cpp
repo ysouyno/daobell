@@ -64,7 +64,6 @@ void get_info_hash(torrent_info *ti, bencode_dictionary *root)
 
   bencode_encoder be(bvb);
   be.encode();
-  be.print_result();
 
   std::string encoded_info_dict = be.get_value();
   char sha1_result[20] = {0};
