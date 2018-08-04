@@ -21,7 +21,7 @@ class bencode_value_safe_cast : public empty_bencode_crawler
     // the type of parameter 't' is a pointer pointed to 'this', so it will be
     // bencode_dictionary object and the type of return value 't_' is to's TO
     // type, it is bencode_dictionary type so here just assignment, it is safe,
-    // better than dynamic_cast
+    // like dynamic_cast
     t_ = t;
   }
 
