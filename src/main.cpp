@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-  bt_download("/home/ysouyno/dnld/spacemacs.tar.gz.torrent", "/home/ysouyno/dnld");
+  bt_download("/home/ysouyno/dnld/hello_multi_file.torrent", "/home/ysouyno/dnld");
 
   return 0;
 }

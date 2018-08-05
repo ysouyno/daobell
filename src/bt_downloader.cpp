@@ -7,9 +7,18 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <vector>
 
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
+
+struct dnld_file
+{
+  pthread_mutex_t mutex;
+  std::string path;
+  unsigned size;
+  unsigned char *data; // memory pointer
+};
 
 struct torrent_info2
 {
@@ -18,16 +27,8 @@ struct torrent_info2
   std::string created_by;
   uint32_t creation_date;
   unsigned piece_length;
-  bencode_list *files; // TODO: do not use this type
+  std::vector<dnld_file *> files;
   char info_hash[20];
-};
-
-struct dnld_file
-{
-  pthread_mutex_t mutex;
-  std::string path;
-  unsigned size;
-  unsigned char *data; // memory pointer
 };
 
 dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size)
@@ -71,7 +72,7 @@ dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size)
 
   close(fd);
 
-  std::cout << "create and open file at %s success" << file->path << std::endl;
+  std::cout << "create and open file success: " << file->path << std::endl;
   return file;
 }
 
@@ -86,6 +87,43 @@ int dnld_file_close_and_free(dnld_file *file)
 
   pthread_mutex_destroy(&file->mutex);
   delete(file);
+
+  return ret;
+}
+
+int populate_files_from_list(bencode_list *files, const std::string &destdir,
+                             const std::string &name, torrent_info2 *torrent)
+{
+  std::cout << "enter populate_files_from_list" << std::endl;
+  int ret = 0;
+
+  std::string path = destdir;
+  path += "/";
+  path += name;
+
+  std::cout << "creating directory: " << path << std::endl;
+  mkdir(path.c_str(), 0777);
+
+  for (auto &f : *files) {
+    bencode_dictionary *value = down_cast<bencode_dictionary>(f.get());
+    if (value) {
+      dict_map dict = value->get_value();
+      for (dict_map::iterator it = dict.begin(); it != dict.end(); ++it) {
+        std::cout << "it->first: " << it->first << std::endl;
+        if (it->first == "length") {
+          bencode_integer *dict_key = down_cast<bencode_integer>(it->second.get());
+          std::cout << "    lenght: " << dict_key->get_value() << std::endl;
+        }
+        if (it->first == "path") {
+          bencode_list *dict_value_list = down_cast<bencode_list>(it->second.get());
+          for (auto &p : *dict_value_list) {
+            bencode_string *str = down_cast<bencode_string>(p.get());
+            std::cout << "    path: " << str->get_value() << std::endl;
+          }
+        }
+      }
+    }
+  }
 
   return ret;
 }
@@ -109,7 +147,9 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
         std::cout << "name: " << file_name << std::endl;
       }
     }
+  }
 
+  for (dict_map::iterator it = info_dict.begin(); it != info_dict.end(); ++it) {
     if (it->first == "pieces") {
       std::cout << "found pieces" << std::endl;
     }
@@ -133,9 +173,23 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
     if (it->first == "files") {
       std::cout << "found files" << std::endl;
       multifile = true;
+
+      // files: a list of dictionaries, one for each file. Each dictionary in
+      // this list contains the following keys:
+      //
+      //   length: length of the file in bytes (integer)
+      //   md5sum: (optional) a 32-character hexadecimal string corresponding
+      //           to the MD5 sum of the file.
+      //   path  : a list containing one or more string elements that together
+      //           represent the path and filename.
+      bencode_list *value = down_cast<bencode_list>(it->second.get());
+      if (value) {
+        populate_files_from_list(value, destdir, file_name, torrent);
+      }
     }
   }
 
+  // single-file mode
   if (!multifile) {
     std::string path = destdir;
     path += "/";
@@ -145,8 +199,9 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
 
     dnld_file *file = dnld_file_create_and_open(path, len);
     if (file) {
-      // TODO: add file ptr to torrent_info2 list
       std::cout << "dnld_file_create_and_open success" << std::endl;
+      torrent->files.push_back(file);
+
       // TODO: don't forget close and free somewhere
       dnld_file_close_and_free(file);
     }
@@ -201,6 +256,9 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       }
     }
   }
+
+  // TODO: need to free memory somewhere
+  delete ret;
 
   return ret;
 }

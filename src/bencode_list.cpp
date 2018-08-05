@@ -2,8 +2,7 @@
 
 void bencode_list::print_member()
 {
-  for (std::vector<std::shared_ptr<bencode_value_base> >::iterator it = value_.begin();
-       it != value_.end(); ++it) {
+  for (value_type::iterator it = value_.begin(); it != value_.end(); ++it) {
     (*it)->print_member();
   }
 }
@@ -18,17 +17,17 @@ void bencode_list::insert_to_list(std::shared_ptr<bencode_value_base> value)
   value_.push_back(value);
 }
 
-const std::vector<std::shared_ptr<bencode_value_base> > &bencode_list::get_value() const
+const bencode_list::value_type &bencode_list::get_value() const
 {
   return value_;
 }
 
-std::vector<std::shared_ptr<bencode_value_base> >::iterator bencode_list::begin()
+bencode_list::value_type::iterator bencode_list::begin()
 {
   return value_.begin();
 }
 
-std::vector<std::shared_ptr<bencode_value_base> >::iterator bencode_list::end()
+bencode_list::value_type::iterator bencode_list::end()
 {
   return value_.end();
 }

@@ -8,20 +8,22 @@
 class bencode_list : public bencode_value_base
 {
 public:
+  typedef std::vector<std::shared_ptr<bencode_value_base> > value_type;
+
   void print_member();
 
   void crawl(bencode_crawler *p);
 
   void insert_to_list(std::shared_ptr<bencode_value_base> value);
 
-  const std::vector<std::shared_ptr<bencode_value_base> > &get_value() const;
+  const value_type &get_value() const;
 
-  std::vector<std::shared_ptr<bencode_value_base> >::iterator begin();
+  value_type::iterator begin();
 
-  std::vector<std::shared_ptr<bencode_value_base> >::iterator end();
+  value_type::iterator end();
 
 private:
-  std::vector<std::shared_ptr<bencode_value_base> > value_;
+  value_type value_;
 };
 
 #endif /* BENCODE_LIST_H */
