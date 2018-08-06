@@ -106,19 +106,32 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
 
   for (auto &f : *files) {
     bencode_dictionary *value = down_cast<bencode_dictionary>(f.get());
+    std::string path = destdir;
+    path += "/";
+    path += name;
+    path += "/";
+
     if (value) {
       dict_map dict = value->get_value();
       for (dict_map::iterator it = dict.begin(); it != dict.end(); ++it) {
         std::cout << "it->first: " << it->first << std::endl;
         if (it->first == "length") {
-          bencode_integer *dict_key = down_cast<bencode_integer>(it->second.get());
+          bencode_integer *dict_key =
+            down_cast<bencode_integer>(it->second.get());
           std::cout << "    lenght: " << dict_key->get_value() << std::endl;
         }
+
         if (it->first == "path") {
-          bencode_list *dict_value_list = down_cast<bencode_list>(it->second.get());
-          for (auto &p : *dict_value_list) {
-            bencode_string *str = down_cast<bencode_string>(p.get());
-            std::cout << "    path: " << str->get_value() << std::endl;
+          int i = 0;
+          bencode_list *path_list = down_cast<bencode_list>(it->second.get());
+          for (auto &p : *path_list) {
+            bencode_string *path_str = down_cast<bencode_string>(p.get());
+            path += path_str->get_value();
+            if (i < (int)(path_list->get_value().size()) - 1) {
+              path += "/";
+            }
+            ++i;
+            std::cout << "    path: " << path << std::endl;
           }
         }
       }
