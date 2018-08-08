@@ -12,6 +12,8 @@
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
 
+static const uint16_t g_port = 6889;
+
 struct dnld_file
 {
   pthread_mutex_t mutex;
@@ -29,6 +31,20 @@ struct torrent_info2
   unsigned piece_length;
   std::vector<dnld_file *> files;
   char info_hash[20];
+  pthread_t tracker_tid;
+
+  struct
+  {
+    bool completed;
+  } sh;
+
+  pthread_mutex_t sh_mutex;
+};
+
+struct tracker_arg
+{
+  struct torrent_info2 *torrent;
+  uint16_t port;
 };
 
 dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size)
@@ -110,6 +126,7 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
     path += "/";
     path += name;
     path += "/";
+    unsigned len = 0;
 
     if (value) {
       dict_map dict = value->get_value();
@@ -118,7 +135,8 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
         if (it->first == "length") {
           bencode_integer *dict_key =
             down_cast<bencode_integer>(it->second.get());
-          std::cout << "    lenght: " << dict_key->get_value() << std::endl;
+          len = dict_key->get_value();
+          std::cout << "    lenght: " << len << std::endl;
         }
 
         if (it->first == "path") {
@@ -128,13 +146,23 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
             bencode_string *path_str = down_cast<bencode_string>(p.get());
             path += path_str->get_value();
             if (i < (int)(path_list->get_value().size()) - 1) {
+              mkdir(path.c_str(), 0777);
               path += "/";
             }
             ++i;
-            std::cout << "    path: " << path << std::endl;
           }
         }
       }
+    }
+
+    std::cout << "    path: " << path << std::endl;
+    dnld_file *file = dnld_file_create_and_open(path, len);
+    if (file) {
+      std::cout << "dnld_file_create_and_open success" << std::endl;
+      torrent->files.push_back(file);
+
+      // TODO: don't forget close and free somewhere
+      dnld_file_close_and_free(file);
     }
   }
 
@@ -270,10 +298,41 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
     }
   }
 
+  pthread_mutex_init(&ret->sh_mutex, NULL);
+  ret->sh.completed = false;
+
   // TODO: need to free memory somewhere
-  delete ret;
+  // delete ret;
 
   return ret;
+}
+
+static void *periodic_announce(void *arg)
+{
+  std::cout << "periodic_announce" << std::endl;
+
+  const tracker_arg *thread_arg = (tracker_arg *)arg;
+  bool completed = false;
+
+  pthread_mutex_lock(&thread_arg->torrent->sh_mutex);
+  completed = thread_arg->torrent->sh.completed;
+  pthread_mutex_unlock(&thread_arg->torrent->sh_mutex);
+
+  int i = 0;
+  while (true && i++ < 10) {
+    std::cout << "while (true) start" << std::endl;
+  }
+
+  return NULL;
+}
+
+int tracker_connection_create(pthread_t *tid, tracker_arg *arg)
+{
+  if (pthread_create(tid, NULL, periodic_announce, (void *)arg)) {
+    return -1;
+  }
+
+  return 0;
 }
 
 void bt_download(const std::string &metafile, const std::string &destdir)
@@ -284,5 +343,16 @@ void bt_download(const std::string &metafile, const std::string &destdir)
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
   bencode_reader br(sp_bvb);
 
-  torrent_init(sp_bvb, destdir);
+  torrent_info2 *torrent = torrent_init(sp_bvb, destdir);
+
+  std::shared_ptr<tracker_arg> arg = std::make_shared<tracker_arg>();
+  arg->torrent = torrent;
+  arg->port = g_port;
+  if (tracker_connection_create(&torrent->tracker_tid, arg.get())) {
+    std::cout << "tracker_connection_create failed" << std::endl;
+  }
+
+  pthread_join(torrent->tracker_tid, NULL);
+
+  delete torrent;
 }
