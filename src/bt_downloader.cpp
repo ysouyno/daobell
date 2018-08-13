@@ -2,6 +2,8 @@
 #include "bencode_parser.h"
 #include "bencode_reader.h"
 #include "bencode_value_safe_cast.h"
+#include "bencode_encoder.h"
+#include "sha1.h"
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -291,6 +293,22 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 
     if (it->first == "info") {
       std::cout << "found info" << std::endl;
+      // compute info_hash
+      bencode_value_base *info_dict = it->second.get();
+
+      bencode_encoder be(info_dict);
+      be.encode();
+      std::string encoded_info_dict = be.get_value();
+
+      char sha1_result[20] = {0};
+      sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(), sha1_result);
+
+      for (int i = 0; i < 20; ++i) {
+        printf("%02x", (unsigned char)sha1_result[i]);
+      }
+      printf("\n");
+      memcpy(ret->info_hash, sha1_result, 20);
+
       bencode_dictionary *value = down_cast<bencode_dictionary>(it->second.get());
       if (value) {
         populate_info_from_dict(value, destdir, ret);
