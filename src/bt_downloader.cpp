@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <vector>
+#include <boost/dynamic_bitset.hpp>
+
+#define DEFAULT_MAX_PEERS 50
 
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
@@ -34,9 +37,15 @@ struct torrent_info2
   std::vector<dnld_file *> files;
   char info_hash[20];
   pthread_t tracker_tid;
+  unsigned max_peers;
+  std::vector<std::string> pieces;
 
   struct
   {
+    boost::dynamic_bitset<> pieces_state;
+    unsigned pieces_left;
+    unsigned uploaded;
+    unsigned downloaded;
     bool completed;
   } sh;
 
@@ -171,6 +180,22 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
   return ret;
 }
 
+int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
+{
+  std::cout << "enter create_pieces_vector" << std::endl;
+  assert(pieces->get_value().length() % 20 == 0);
+
+  std::cout << "pieces's length: " << pieces->get_value().length() << std::endl;
+
+  for (unsigned i = 0; i < pieces->get_value().length(); i += 20) {
+    torrent->pieces.push_back(pieces->get_value().substr(i, 20));
+  }
+
+  assert(torrent->pieces.at(torrent->pieces.size() - 1).size() == 20);
+
+  return 0;
+}
+
 int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir,
                             torrent_info2 *torrent)
 {
@@ -194,7 +219,10 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
 
   for (dict_map::iterator it = info_dict.begin(); it != info_dict.end(); ++it) {
     if (it->first == "pieces") {
-      std::cout << "found pieces" << std::endl;
+      bencode_string *value = down_cast<bencode_string>(it->second.get());
+      if (value) {
+        create_pieces_vector(value, torrent);
+      }
     }
 
     if (it->first == "piece length") {
@@ -317,6 +345,13 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   }
 
   pthread_mutex_init(&ret->sh_mutex, NULL);
+  ret->max_peers = DEFAULT_MAX_PEERS;
+  ret->sh.pieces_state.resize(ret->pieces.size(), false);
+  std::cout << "torrent::sh::pieces_state: " << ret->sh.pieces_state << std::endl;
+  ret->sh.pieces_left = ret->pieces.size();
+  std::cout << "torrent::sh::pieces_left: " << ret->pieces.size() << std::endl;
+  ret->sh.uploaded = 0;
+  ret->sh.downloaded = 0;
   ret->sh.completed = false;
 
   // TODO: need to free memory somewhere
