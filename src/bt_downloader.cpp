@@ -4,6 +4,7 @@
 #include "bencode_value_safe_cast.h"
 #include "bencode_encoder.h"
 #include "sha1.h"
+#include "tracker_announce.h"
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -11,8 +12,13 @@
 #include <sys/mman.h>
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
+#include <list>
 
 #define DEFAULT_MAX_PEERS 50
+
+#define SET_HAS(_ptr, _has) ((_ptr)->has |= (_has))
+#define CLR_HAS(_ptr, _has) ((_ptr)->has &= ~(_has))
+#define HAS(_ptr, _has) !!((_ptr)->has & (_has))
 
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
@@ -25,6 +31,24 @@ struct dnld_file
   std::string path;
   unsigned size;
   unsigned char *data; // memory pointer
+};
+
+struct peer_info
+{
+  char peer_id[20];
+  union
+  {
+    struct sockaddr_storage sas;
+    struct sockaddr sa;
+    struct sockaddr_in sa_in;
+    struct sockaddr_in6 sa_in6;
+  } addr;
+};
+
+struct peer_conn
+{
+  pthread_t thread;
+  peer_info peer;
 };
 
 struct torrent_info2
@@ -43,6 +67,7 @@ struct torrent_info2
   struct
   {
     boost::dynamic_bitset<> pieces_state;
+    std::list<peer_conn> peer_connections;
     unsigned pieces_left;
     unsigned uploaded;
     unsigned downloaded;
@@ -360,20 +385,74 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   return ret;
 }
 
+std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
+{
+  std::cout << "enter create_tracker_request" << std::endl;
+
+  const tracker_arg *targ = (tracker_arg *)arg;
+  std::shared_ptr<tracker_announce_req> ret =
+    std::make_shared<tracker_announce_req>();
+  if (ret) {
+    ret->has = 0;
+    memcpy(ret->info_hash, targ->torrent->info_hash, sizeof(ret->info_hash));
+
+    // now just let peer_id equals to torrent's info_hash
+    memcpy(ret->peer_id, targ->torrent->info_hash, sizeof(ret->peer_id));
+    ret->port = targ->port;
+    ret->compact = true;
+    SET_HAS(ret, REQUEST_HAS_COMPACT);
+
+    pthread_mutex_lock(&targ->torrent->sh_mutex);
+    unsigned num_conns = targ->torrent->sh.peer_connections.size();
+    pthread_mutex_unlock(&targ->torrent->sh_mutex);
+
+    ret->numwant = targ->torrent->max_peers - num_conns;
+    SET_HAS(ret, REQUEST_HAS_NUMWANT);
+
+    pthread_mutex_lock(&targ->torrent->sh_mutex);
+    ret->uploaded = targ->torrent->sh.uploaded;
+    ret->downloaded = targ->torrent->sh.downloaded;
+    ret->left = 0; // TODO
+    pthread_mutex_unlock(&targ->torrent->sh_mutex);
+  }
+
+  return ret;
+}
+
 static void *periodic_announce(void *arg)
 {
   std::cout << "periodic_announce" << std::endl;
 
-  const tracker_arg *thread_arg = (tracker_arg *)arg;
+  const tracker_arg *targ = (tracker_arg *)arg;
   bool completed = false;
 
-  pthread_mutex_lock(&thread_arg->torrent->sh_mutex);
-  completed = thread_arg->torrent->sh.completed;
-  pthread_mutex_unlock(&thread_arg->torrent->sh_mutex);
+  pthread_mutex_lock(&targ->torrent->sh_mutex);
+  completed = targ->torrent->sh.completed;
+  pthread_mutex_unlock(&targ->torrent->sh_mutex);
 
   int i = 0;
+  bool started = false;
   while (true && i++ < 10) {
     std::cout << "while (true) start" << std::endl;
+    std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
+    std::shared_ptr<tracker_announce_resp> resp;
+
+    if (!started) {
+      req->event = TORRENT_EVENT_STARTED;
+      SET_HAS(req, REQUEST_HAS_EVENT);
+      started = true;
+    }
+
+    pthread_mutex_lock(&targ->torrent->sh_mutex);
+    bool current_completed = targ->torrent->sh.completed;
+    pthread_mutex_unlock(&targ->torrent->sh_mutex);
+
+    if (false == completed && true == current_completed) {
+      req->event = TORRENT_EVENT_COMPLETED;
+      SET_HAS(req, REQUEST_HAS_EVENT);
+    }
+
+    completed = current_completed;
   }
 
   return NULL;

@@ -15,6 +15,16 @@ enum torrent_event{
   TORRENT_EVENT_STOPPED
 };
 
+enum {
+  REQUEST_HAS_IP = (1 << 0),
+  REQUEST_HAS_NUMWANT = (1 << 1),
+  REQUEST_HAS_NO_PEER_ID = (1 << 2),
+  REQUEST_HAS_COMPACT = (1 << 3),
+  REQUEST_HAS_KEY = (1 << 4),
+  REQUEST_HAS_TRACKER_ID = (1 << 5),
+  REQUEST_HAS_EVENT = (1 << 6)
+};
+
 struct tracker_announce_req
 {
   char has;
