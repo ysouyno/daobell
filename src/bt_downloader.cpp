@@ -314,7 +314,7 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   std::cout << "enter torrent_init" << std::endl;
 
   torrent_info2 *ret = new torrent_info2;
-  memset(ret, 0, sizeof(torrent_info2));
+  // memset(ret, 0, sizeof(torrent_info2)); // fix segmentation fault
 
   bencode_dictionary *dict = down_cast<bencode_dictionary>(meta.get());
   dict_map dictmap = dict->get_value();
