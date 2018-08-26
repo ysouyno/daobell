@@ -25,6 +25,10 @@ enum {
   REQUEST_HAS_EVENT = (1 << 6)
 };
 
+#define SET_HAS(_ptr, _has) ((_ptr)->has |= (_has))
+#define CLR_HAS(_ptr, _has) ((_ptr)->has &= ~(_has))
+#define HAS(_ptr, _has) !!((_ptr)->has & (_has))
+
 struct tracker_announce_req
 {
   char has;
@@ -55,5 +59,8 @@ struct tracker_announce_resp
   unsigned incomplete;
   bencode_base_ptr peers;
 };
+
+std::shared_ptr<tracker_announce_resp>
+tracker_announce(const std::string &url, tracker_announce_req *req);
 
 #endif /* TRACKER_ANNOUNCE_H */

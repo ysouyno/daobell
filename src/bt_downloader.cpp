@@ -16,10 +16,6 @@
 
 #define DEFAULT_MAX_PEERS 50
 
-#define SET_HAS(_ptr, _has) ((_ptr)->has |= (_has))
-#define CLR_HAS(_ptr, _has) ((_ptr)->has &= ~(_has))
-#define HAS(_ptr, _has) !!((_ptr)->has & (_has))
-
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
 
@@ -385,9 +381,28 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   return ret;
 }
 
+void create_local_peer_id(char outbuff[20])
+{
+  int offset = 0;
+
+  const char *id = "ys";
+
+  memset(outbuff, 0, 20);
+  offset += snprintf(outbuff, 20, "-%.*s%02u%02u-", 2, id, 1, 0);
+
+  for (unsigned i = 0; i < 12 / (sizeof(int32_t)); i++) {
+    int32_t r = rand();
+    memcpy(outbuff + offset, &r, sizeof(r));
+    offset += sizeof(r);
+  }
+}
+
 std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
 {
   std::cout << "enter create_tracker_request" << std::endl;
+
+  char local_peer_id[20] = {0};
+  create_local_peer_id(local_peer_id);
 
   const tracker_arg *targ = (tracker_arg *)arg;
   std::shared_ptr<tracker_announce_req> ret =
@@ -395,9 +410,7 @@ std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
   if (ret) {
     ret->has = 0;
     memcpy(ret->info_hash, targ->torrent->info_hash, sizeof(ret->info_hash));
-
-    // now just let peer_id equals to torrent's info_hash
-    memcpy(ret->peer_id, targ->torrent->info_hash, sizeof(ret->peer_id));
+    memcpy(ret->peer_id, local_peer_id, sizeof(ret->peer_id));
     ret->port = targ->port;
     ret->compact = true;
     SET_HAS(ret, REQUEST_HAS_COMPACT);
@@ -432,10 +445,10 @@ static void *periodic_announce(void *arg)
 
   int i = 0;
   bool started = false;
-  while (true && i++ < 10) {
+  while (true && i++ < 1) {
     std::cout << "while (true) start" << std::endl;
     std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
-    std::shared_ptr<tracker_announce_resp> resp;
+
 
     if (!started) {
       req->event = TORRENT_EVENT_STARTED;
@@ -453,6 +466,9 @@ static void *periodic_announce(void *arg)
     }
 
     completed = current_completed;
+
+    std::shared_ptr<tracker_announce_resp> resp =
+      tracker_announce(targ->torrent->announce, req.get());
   }
 
   return NULL;
