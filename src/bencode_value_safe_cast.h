@@ -16,6 +16,9 @@ template <typename T>
 class bencode_value_safe_cast : public empty_bencode_crawler
 {
  public:
+  bencode_value_safe_cast();
+
+ public:
   virtual void crawl(T *t)
   {
     // the type of parameter 't' is a pointer pointed to 'this', so it will be
@@ -33,6 +36,10 @@ class bencode_value_safe_cast : public empty_bencode_crawler
  private:
   T *t_;
 };
+
+template <typename T>
+bencode_value_safe_cast<T>::bencode_value_safe_cast() : t_(NULL)
+{}
 
 template <typename TO, typename FROM>
   TO *down_cast(FROM *from)

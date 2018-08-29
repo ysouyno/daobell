@@ -1,6 +1,7 @@
 #include "tracker_announce.h"
 #include "http_url_parser.h"
 #include "utils.h"
+#include "tracker_resp_parser.h"
 #include <iostream>
 
 int build_http_request(http_url_parser *url, tracker_announce_req *req, std::string &out_str)
@@ -147,6 +148,55 @@ int tracker_send_all(int sockfd, const char *buff, size_t len)
   return 0;
 }
 
+int content_from_tracker_resp(char *buff, size_t len, std::string &out_str)
+{
+  std::cout << "enter content_from_tracker_resp" << std::endl;
+
+  char *line = NULL;
+  char *saveptr = NULL;
+  bool chuncked = false;
+  unsigned content_length = 0;
+
+  line = strtok_r(buff, "\n", &saveptr);
+
+  if (strncmp(line, "HTTP/1.0 200 OK", strlen("HTTP/1.0 200 OK")) &&
+      strncmp(line, "HTTP/1.1 200 OK", strlen("HTTP/1.1 200 OK"))) {
+    std::cout << "can not find HTTP/1.x 200 OK" << std::endl;
+    return -1;
+  }
+
+  char *token = NULL;
+  char *saveptrtoken = NULL;
+
+  do {
+    line = strtok_r(NULL, "\n", &saveptr);
+
+    if (!strncmp(line, "Transfer-Encoding: chuncked",
+                 strlen("Transfer-Encoding: chuncked"))) {
+      chuncked = true;
+    }
+
+    if (!strncmp(line, "Content-Length:", strlen("Content-Length:"))) {
+      token = strtok_r(line, ":", &saveptrtoken);
+      token = strtok_r(NULL, ":", &saveptrtoken);
+
+      content_length = strtoul(token, NULL, 0);
+    }
+  } while (strlen(line) != 1);
+
+  if (chuncked) {
+    std::cout << "chuncked is true" << std::endl;
+    // TODO
+  }
+  else {
+    std::cout << "chuncked is false" << std::endl;
+    std::string str(line + strlen(line) + 1, content_length);
+    out_str = str;
+  }
+
+  return 0;
+}
+
 int tracker_recv_resp(int sockfd, std::string &out_str)
 {
   std::cout << "enter tracker_recv_resp" << std::endl;
@@ -164,12 +214,16 @@ int tracker_recv_resp(int sockfd, std::string &out_str)
     }
 
     total_recv += ret;
-
   } while (ret > 0);
 
-  std::cout << "tracker http response received, size: "
-            << total_recv << std::endl;
   std::cout << buff << std::endl;
+
+  if (content_from_tracker_resp(buff, total_recv, out_str)) {
+    std::cout << "content_from_tracker_resp failed" << std::endl;
+    return -1;
+  }
+
+  std::cout << "out_str: " << out_str << std::endl;
 
   return 0;
 }
@@ -213,5 +267,12 @@ tracker_announce(const std::string &url, tracker_announce_req *req)
     return NULL;
   }
 
-  return NULL;
+  std::shared_ptr<tracker_announce_resp> ret = tracker_resp_parse(resp_str);
+  if (!ret) {
+    std::cout << "tracker_resp_parse failed" << std::endl;
+    close(sockfd);
+    return NULL;
+  }
+
+  return ret;
 }

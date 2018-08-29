@@ -25,6 +25,13 @@ enum {
   REQUEST_HAS_EVENT = (1 << 6)
 };
 
+enum {
+  RESPONSE_HAS_FAILURE_REASON = (1 << 0),
+  RESPONSE_HAS_WARNING_MESSAGE = (1 << 1),
+  RESPONSE_HAS_MIN_INTERVAL = (1 << 2),
+  RESPONSE_HAS_TRACKER_ID = (1 << 3)
+};
+
 #define SET_HAS(_ptr, _has) ((_ptr)->has |= (_has))
 #define CLR_HAS(_ptr, _has) ((_ptr)->has &= ~(_has))
 #define HAS(_ptr, _has) !!((_ptr)->has & (_has))
