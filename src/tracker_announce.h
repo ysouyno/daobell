@@ -5,7 +5,9 @@
 #include <netinet/in.h>
 #include <string>
 #include <memory>
+#include <list>
 #include "bencode_value_base.h"
+#include "peer_info.h"
 
 typedef std::shared_ptr<bencode_value_base> bencode_base_ptr;
 
@@ -64,7 +66,8 @@ struct tracker_announce_resp
   std::string tracker_id;
   unsigned complete;
   unsigned incomplete;
-  bencode_base_ptr peers;
+  // bencode_base_ptr peers;
+  std::list<peer_info> peers;
 };
 
 std::shared_ptr<tracker_announce_resp>

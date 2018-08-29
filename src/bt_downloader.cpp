@@ -5,6 +5,7 @@
 #include "bencode_encoder.h"
 #include "sha1.h"
 #include "tracker_announce.h"
+#include "peer_info.h"
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -27,18 +28,6 @@ struct dnld_file
   std::string path;
   unsigned size;
   unsigned char *data; // memory pointer
-};
-
-struct peer_info
-{
-  char peer_id[20];
-  union
-  {
-    struct sockaddr_storage sas;
-    struct sockaddr sa;
-    struct sockaddr_in sa_in;
-    struct sockaddr_in6 sa_in6;
-  } addr;
 };
 
 struct peer_conn
