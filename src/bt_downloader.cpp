@@ -16,6 +16,7 @@
 #include <list>
 
 #define DEFAULT_MAX_PEERS 50
+#define TRACKER_RETRY_INTERVAL 15
 
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
@@ -427,13 +428,14 @@ static void *periodic_announce(void *arg)
 
   const tracker_arg *targ = (tracker_arg *)arg;
   bool completed = false;
+  unsigned interval = 0;
 
   pthread_mutex_lock(&targ->torrent->sh_mutex);
   completed = targ->torrent->sh.completed;
   pthread_mutex_unlock(&targ->torrent->sh_mutex);
 
-  int i = 0;
   bool started = false;
+  int i = 0;
   while (true && i++ < 1) {
     std::cout << "while (true) start" << std::endl;
     std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
@@ -458,6 +460,20 @@ static void *periodic_announce(void *arg)
 
     std::shared_ptr<tracker_announce_resp> resp =
       tracker_announce(targ->torrent->announce, req.get());
+
+    if (resp) {
+      print_tracker_announce_resp(resp.get());
+      interval = resp->interval;
+      std::cout << "re-announcing to tracker again in " << interval
+                << " seconds" << std::endl;
+    }
+    else {
+      interval = TRACKER_RETRY_INTERVAL;
+      std::cout << "retrying announcing to tracker in " << interval
+                << " seconds" << std::endl;
+    }
+
+    // sleep(interval);
   }
 
   return NULL;

@@ -73,4 +73,6 @@ struct tracker_announce_resp
 std::shared_ptr<tracker_announce_resp>
 tracker_announce(const std::string &url, tracker_announce_req *req);
 
+void print_tracker_announce_resp(const tracker_announce_resp *resp);
+
 #endif /* TRACKER_ANNOUNCE_H */

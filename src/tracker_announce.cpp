@@ -276,3 +276,49 @@ tracker_announce(const std::string &url, tracker_announce_req *req)
 
   return ret;
 }
+
+void print_tracker_announce_resp(const tracker_announce_resp *resp)
+{
+  std::cout << "enter print_tracker_announce_resp" << std::endl;
+  assert(resp);
+
+  std::cout << "tracker announce response:" << std::endl;
+
+  if (HAS(resp, RESPONSE_HAS_FAILURE_REASON)) {
+    std::cout << "  failure reason: " << resp->failure_reason << std::endl;
+  }
+
+  if (HAS(resp, RESPONSE_HAS_WARNING_MESSAGE)) {
+    std::cout << "  warning message: " << resp->warning_message << std::endl;
+  }
+
+  if (HAS(resp, RESPONSE_HAS_TRACKER_ID)) {
+    std::cout << "  tracker id: " << resp->tracker_id << std::endl;
+  }
+
+  if (HAS(resp, RESPONSE_HAS_MIN_INTERVAL)) {
+    std::cout << "  min interval: " << resp->min_interval << std::endl;
+  }
+
+  std::cout << "  interval: " << resp->interval << std::endl;
+  std::cout << "  complete: " << resp->complete << std::endl;
+  std::cout << "  incomplete: " << resp->incomplete << std::endl;
+  std::cout << "  peers's size: " << resp->peers.size() << std::endl;
+
+  for (std::list<peer_info>::const_iterator it = resp->peers.begin();
+       it != resp->peers.end(); ++it) {
+    char buff[INET6_ADDRSTRLEN] = {0};
+    uint16_t port = 0;
+
+    if (it->addr.sas.ss_family == AF_INET) {
+      inet_ntop(AF_INET, &it->addr.sa_in.sin_addr, buff, INET_ADDRSTRLEN);
+      port = ntohs(it->addr.sa_in.sin_port);
+    }
+    else {
+      inet_ntop(AF_INET6, &it->addr.sa_in6.sin6_addr, buff, INET6_ADDRSTRLEN);
+      port = ntohs(it->addr.sa_in6.sin6_port);
+    }
+
+    std::cout << "    peer: " << buff << " [port: " << port << "]" << std::endl;
+  }
+}

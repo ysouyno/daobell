@@ -95,6 +95,7 @@ tracker_resp_parse(const std::string &resp_str)
       if (value) {
         ret->min_interval = value->get_value();
         std::cout << "min interval: " << ret->min_interval << std::endl;
+        SET_HAS(ret, RESPONSE_HAS_MIN_INTERVAL);
       }
     }
 
@@ -137,5 +138,5 @@ tracker_resp_parse(const std::string &resp_str)
     }
   }
 
-  return NULL;
+  return ret;
 }
