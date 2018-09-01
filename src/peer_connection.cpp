@@ -5,8 +5,30 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <mqueue.h>
+#include <boost/dynamic_bitset.hpp>
+#include <queue>
 
 #define PEER_CONNECT_TIMEOUT_SEC 5
+
+struct peer_state
+{
+  bool choked;
+  bool interested;
+};
+
+struct conn_state
+{
+  peer_state local;
+  peer_state remote;
+  boost::dynamic_bitset<> peer_have;
+  boost::dynamic_bitset<> peer_wants;
+  boost::dynamic_bitset<> local_have;
+  size_t bitlen;
+  unsigned blocks_sent;
+  unsigned blocks_recvd;
+  std::queue<request_msg> peer_requests; // requests from peer
+};
 
 void get_peer_ip(const peer_info *peer, char *out_str, size_t out_len)
 {
@@ -117,6 +139,51 @@ int handshake(int sockfd, const peer_arg *parg, char peer_id[20],
   return 0;
 }
 
+void peer_connection_queue_name(pthread_t thread, char *out, size_t len)
+{
+  assert(len >= strlen("/") + 2 * sizeof(pthread_t) + strlen("_queue") + 1);
+
+  size_t plen = 0;
+  plen += snprintf(out, len - plen, "/");
+
+  for(unsigned char *cp = (unsigned char *)thread;
+      cp < ((unsigned char *)thread) + sizeof(pthread_t); cp++) {
+    plen += snprintf(out + plen, len - plen, "%02X", *cp);
+    if (plen == len) {
+      return;
+    }
+  }
+
+  snprintf(out + plen, len - plen, "_queue");
+}
+
+mqd_t peer_queue_open(int flags)
+{
+  std::cout << "enter peer_queue_open" << std::endl;
+
+  char queue_name[64] = {0};
+  peer_connection_queue_name(pthread_self(), queue_name, sizeof(queue_name));
+
+  struct mq_attr attr;
+  attr.mq_flags = O_NONBLOCK;
+  attr.mq_maxmsg = 10; // TODO: get max value for this with getrlimit
+  attr.mq_msgsize = sizeof(unsigned);
+  attr.mq_curmsgs = 0;
+
+  mqd_t ret = mq_open(queue_name, flags, 0600, &attr);
+  if ((mqd_t)-1 != ret) {
+    std::cout << "successfully opened message queue from receiver thread: "
+              << queue_name << std::endl;
+  }
+  else {
+    perror("mq_open");
+    std::cout << "failed to open queue in receiver thread: "
+              << queue_name << std::endl;
+  }
+
+  return ret;
+}
+
 static void *peer_connection(void *arg)
 {
   std::cout << "enter peer_connection" << std::endl;
@@ -156,6 +223,14 @@ static void *peer_connection(void *arg)
   }
   std::cout << "handshake with peer: " << ipstr
             << " successful" << std::endl;
+
+  mqd_t queue = 0;
+  queue = peer_queue_open(O_RDONLY | O_CREAT | O_NONBLOCK);
+  if ((mqd_t)-1 == queue) {
+    pthread_exit(NULL);
+  }
+
+  // TODO: cleanup peer queue, why build error if use pthread_cleanup_push
 
   return NULL;
 }

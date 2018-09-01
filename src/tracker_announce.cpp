@@ -4,7 +4,8 @@
 #include "tracker_resp_parser.h"
 #include <iostream>
 
-int build_http_request(http_url_parser *url, tracker_announce_req *req, std::string &out_str)
+int build_http_request(http_url_parser *url, tracker_announce_req *req,
+                       std::string &out_str)
 {
   std::cout << "enter build_http_request" << std::endl;
 

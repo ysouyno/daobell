@@ -31,5 +31,5 @@ endif (BUILD_LIBRARY)
 target_link_libraries (daobell ${Boost_LIBRARIES})
 
 if (CMAKE_THREAD_LIBS_INIT)
-  target_link_libraries (daobell "${CMAKE_THREAD_LIBS_INIT}")
+  target_link_libraries (daobell "${CMAKE_THREAD_LIBS_INIT}" "rt")
 endif ()
