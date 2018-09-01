@@ -1,5 +1,6 @@
 #include "peer_connection.h"
 #include "peer_msg.h"
+#include "piece_request.h"
 #include <iostream>
 #include <assert.h>
 #include <arpa/inet.h>
@@ -27,7 +28,8 @@ struct conn_state
   size_t bitlen;
   unsigned blocks_sent;
   unsigned blocks_recvd;
-  std::queue<request_msg> peer_requests; // requests from peer
+  std::queue<request_msg> peer_requests;   // requests from peer
+  std::list<piece_request> local_requests; // requests from piece
 };
 
 void get_peer_ip(const peer_info *peer, char *out_str, size_t out_len)
@@ -184,6 +186,41 @@ mqd_t peer_queue_open(int flags)
   return ret;
 }
 
+std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
+{
+  std::cout << "enter conn_state_init" << std::endl;
+  assert(torrent);
+
+  std::shared_ptr<conn_state> ret = std::make_shared<conn_state>();
+  if (!ret) {
+    return ret;
+  }
+
+  ret->local.choked = true;
+  ret->local.interested = false;
+  ret->remote.choked = true;
+  ret->remote.interested = false;
+
+  ret->bitlen = torrent->pieces.size();
+  std::cout << "conn_state.bitlen: " << ret->bitlen << std::endl;
+
+  ret->peer_have.resize(ret->bitlen, false);
+  std::cout << "conn_state.peer_have:" << ret->peer_have << std::endl;
+
+  ret->peer_wants.resize(ret->bitlen, false);
+  std::cout << "conn_state.peer_wants: " << ret->peer_wants << std::endl;
+
+  pthread_mutex_lock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+  torrent_make_bitfield(torrent, &(ret->local_have));
+  pthread_mutex_unlock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+  std::cout << "conn_state.local_have: " << ret->local_have << std::endl;
+
+  ret->blocks_sent = 0;
+  ret->blocks_recvd = 0;
+
+  return ret;
+}
+
 static void *peer_connection(void *arg)
 {
   std::cout << "enter peer_connection" << std::endl;
@@ -227,10 +264,16 @@ static void *peer_connection(void *arg)
   mqd_t queue = 0;
   queue = peer_queue_open(O_RDONLY | O_CREAT | O_NONBLOCK);
   if ((mqd_t)-1 == queue) {
+    std::cout << "peer_queue_open failed" << std::endl;
     pthread_exit(NULL);
   }
 
   // TODO: cleanup peer queue, why build error if use pthread_cleanup_push
+  std::shared_ptr<conn_state> state = conn_state_init(torrent);
+  if (!state) {
+    std::cout << "conn_state_init failed" << std::endl;
+    pthread_exit(NULL);
+  }
 
   return NULL;
 }

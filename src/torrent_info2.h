@@ -24,6 +24,12 @@
 typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> > dict_map;
 typedef std::shared_ptr<bencode_value_base> bencode_value_ptr;
 
+enum {
+  PIECE_STATE_NOT_REQUESTED,
+  PIECE_STATE_REQUESTED,
+  PIECE_STATE_HAVE
+};
+
 struct torrent_info2
 {
   std::string announce;
@@ -39,7 +45,7 @@ struct torrent_info2
 
   struct
   {
-    boost::dynamic_bitset<> pieces_state;
+    std::vector<int> pieces_state;
     std::list<peer_conn> peer_connections;
     unsigned pieces_left;
     unsigned uploaded;
@@ -51,5 +57,7 @@ struct torrent_info2
 };
 
 torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir);
+int torrent_make_bitfield(const torrent_info2 *torrent,
+                          boost::dynamic_bitset<> *out);
 
 #endif /* TORRENT_INFO2_H */

@@ -5,6 +5,12 @@
 #include <sys/mman.h>
 #include <string>
 
+struct file_mem
+{
+  void *mem;
+  size_t size;
+};
+
 struct dnld_file
 {
   pthread_mutex_t mutex;

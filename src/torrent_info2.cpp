@@ -213,7 +213,8 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       std::string encoded_info_dict = be.get_value();
 
       char sha1_result[20] = {0};
-      sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(), sha1_result);
+      sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(),
+                   sha1_result);
 
       for (int i = 0; i < 20; ++i) {
         printf("%02x", (unsigned char)sha1_result[i]);
@@ -221,7 +222,8 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       printf("\n");
       memcpy(ret->info_hash, sha1_result, 20);
 
-      bencode_dictionary *value = down_cast<bencode_dictionary>(it->second.get());
+      bencode_dictionary *value =
+        down_cast<bencode_dictionary>(it->second.get());
       if (value) {
         populate_info_from_dict(value, destdir, ret);
       }
@@ -230,8 +232,8 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 
   pthread_mutex_init(&ret->sh_mutex, NULL);
   ret->max_peers = DEFAULT_MAX_PEERS;
-  ret->sh.pieces_state.resize(ret->pieces.size(), false);
-  std::cout << "torrent::sh::pieces_state: " << ret->sh.pieces_state << std::endl;
+  ret->sh.pieces_state.resize(ret->pieces.size());
+  ret->sh.pieces_state.shrink_to_fit();
   ret->sh.pieces_left = ret->pieces.size();
   std::cout << "torrent::sh::pieces_left: " << ret->pieces.size() << std::endl;
   ret->sh.uploaded = 0;
@@ -242,4 +244,23 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   // delete ret;
 
   return ret;
+}
+
+int torrent_make_bitfield(const torrent_info2 *torrent,
+                          boost::dynamic_bitset<> *out)
+{
+  std::cout << "enter torrent_make_bitfield" << std::endl;
+  assert(torrent);
+
+  unsigned num_pieces = torrent->pieces.size();
+
+  out->resize(num_pieces, false);
+
+  for (unsigned i = 0; i < num_pieces; ++i) {
+    if (torrent->sh.pieces_state.at(i) == PIECE_STATE_HAVE) {
+      (*out)[i] = 1;
+    }
+  }
+
+  return 0;
 }
