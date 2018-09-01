@@ -15,4 +15,10 @@ struct peer_info
   } addr;
 };
 
+struct peer_conn
+{
+  pthread_t peer_tid;
+  peer_info peer;
+};
+
 #endif /* PEER_INFO_H */

@@ -5,6 +5,9 @@
 #include "peer_info.h"
 #include "dnld_file.h"
 #include "torrent_info2.h"
+#include "peer_info.h"
+#include "peer_connection.h"
+#include "peer_id.h"
 #include <string.h>
 
 #define TRACKER_RETRY_INTERVAL 15
@@ -17,28 +20,9 @@ struct tracker_arg
   uint16_t port;
 };
 
-void create_local_peer_id(char outbuff[20])
-{
-  int offset = 0;
-
-  const char *id = "ys";
-
-  memset(outbuff, 0, 20);
-  offset += snprintf(outbuff, 20, "-%.*s%02u%02u-", 2, id, 1, 0);
-
-  for (unsigned i = 0; i < 12 / (sizeof(int32_t)); i++) {
-    int32_t r = rand();
-    memcpy(outbuff + offset, &r, sizeof(r));
-    offset += sizeof(r);
-  }
-}
-
 std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
 {
   std::cout << "enter create_tracker_request" << std::endl;
-
-  char local_peer_id[20] = {0};
-  create_local_peer_id(local_peer_id);
 
   const tracker_arg *targ = (tracker_arg *)arg;
   std::shared_ptr<tracker_announce_req> ret =
@@ -46,7 +30,7 @@ std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
   if (ret) {
     ret->has = 0;
     memcpy(ret->info_hash, targ->torrent->info_hash, sizeof(ret->info_hash));
-    memcpy(ret->peer_id, local_peer_id, sizeof(ret->peer_id));
+    memcpy(ret->peer_id, g_local_peer_id, sizeof(ret->peer_id));
     ret->port = targ->port;
     ret->compact = true;
     SET_HAS(ret, REQUEST_HAS_COMPACT);
@@ -71,6 +55,21 @@ std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
 int create_peer_connection(peer_info *peer, torrent_info2 *torrent)
 {
   std::cout << "enter create_peer_connection" << std::endl;
+  assert(peer);
+  assert(torrent);
+
+  std::shared_ptr<peer_conn> conn = std::make_shared<peer_conn>();
+  std::shared_ptr<peer_arg> arg = std::make_shared<peer_arg>();
+
+  arg->torrent = torrent;
+  arg->has_torrent = true;
+  arg->has_sockfd = false;
+  arg->peer = *peer;
+
+  if (peer_connection_create(&conn->peer_tid, arg.get())) {
+    std::cout << "peer_connection_create failed" << std::endl;
+    return -1;
+  }
 
   return 0;
 }
@@ -148,6 +147,8 @@ int tracker_connection_create(pthread_t *tid, tracker_arg *arg)
 
 void bt_download(const std::string &metafile, const std::string &destdir)
 {
+  create_local_peer_id(g_local_peer_id);
+
   std::ifstream file(metafile, std::ios::binary);
   bencode_parser bp(file);
 

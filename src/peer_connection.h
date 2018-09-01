@@ -2,14 +2,7 @@
 #define PEER_CONNECTION_H
 
 #include "peer_info.h"
-
-struct torrent_info2;
-
-struct peer_conn
-{
-  pthread_t tid;
-  peer_info peer;
-};
+#include "torrent_info2.h"
 
 struct peer_arg
 {
@@ -19,5 +12,7 @@ struct peer_arg
   int sockfd;
   peer_info peer;
 };
+
+int peer_connection_create(pthread_t *thread, peer_arg *arg);
 
 #endif /* PEER_CONNECTION_H */

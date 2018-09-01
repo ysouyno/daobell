@@ -9,7 +9,7 @@
 #include "bencode_encoder.h"
 #include "bencode_value_safe_cast.h"
 #include "dnld_file.h"
-#include "peer_connection.h"
+#include "peer_info.h"
 #include "sha1.h"
 #include <pthread.h>
 #include <string>
