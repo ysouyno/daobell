@@ -221,6 +221,45 @@ std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
   return ret;
 }
 
+void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
+{
+  std::cout << "enter unchoke" << std::endl;
+  assert(state);
+  assert(torrent);
+
+  peer_msg2 unchoke_msg;
+  unchoke_msg.type = MSG_UNCHOKE;
+
+  if (peer_msg_send(sockfd, torrent, &unchoke_msg)) {
+    std::cout << "peer_msg_send MSG_UNCHOKE failed" << std::endl;
+    return;
+  }
+
+  state->remote.choked = false;
+  std::cout << "unchoked peer" << std::endl;
+}
+
+int process_queued_msgs(int sockfd, const torrent_info2 *torrent,
+                        conn_state *state)
+{
+  std::cout << "process_queued_msgs" << std::endl;
+
+  while (peer_msg_buff_nonempty(sockfd)) {
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_testcancel();
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+    peer_msg2 msg;
+
+    if (peer_msg_recv(sockfd, torrent, &msg)) {
+      std::cout << "peer_msg_recv failed" << std::endl;
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 static void *peer_connection(void *arg)
 {
   std::cout << "enter peer_connection" << std::endl;
@@ -281,9 +320,25 @@ static void *peer_connection(void *arg)
   bitmsg.payload.bitfield.resize(torrent->pieces.size(), false);
   std::cout << "peer_msg2.payload.bitfield: " << bitmsg.payload.bitfield
             << std::endl;
-  if (peer_msg_send(sockfd, &bitmsg, torrent)) {
+  if (peer_msg_send(sockfd, torrent, &bitmsg)) {
     std::cout << "peer_msg_send failed" << std::endl;
     pthread_exit(NULL);
+  }
+
+  unchoke(sockfd, torrent, state.get());
+
+  int i = 0;
+  while (true && i++ < 1) {
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    usleep(250 * 1000);
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+    // TODO: mq_receive
+
+    if (process_queued_msgs(sockfd, torrent, state.get())) {
+      std::cout << "process_queued_msgs failed" << std::endl;
+      pthread_exit(NULL);
+    }
   }
 
   return NULL;

@@ -62,6 +62,8 @@ struct peer_msg2
 int peer_send_handshake(int sockfd, char info_hash[20]);
 int peer_recv_handshake(int sockfd, char out_info_hash[20],
                         char out_peer_id[20], bool peer_id);
-int peer_msg_send(int sockfd, peer_msg2 *msg, const torrent_info2 *torrent);
+int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg);
+int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out);
+bool peer_msg_buff_nonempty(int sockfd);
 
 #endif /* PEER_MSG_H */

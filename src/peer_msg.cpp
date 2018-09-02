@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/socket.h>
 #include <memory>
+#include <sys/ioctl.h>
 
 int peer_send_buff(int sockfd, const char *buff, size_t len)
 {
@@ -187,7 +188,7 @@ uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
   return ret;
 }
 
-int peer_msg_send(int sockfd, peer_msg2 *msg, const torrent_info2 *torrent)
+int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
 {
   // https://wiki.theory.org/index.php/BitTorrentSpecification#Messages
   // messages take the form of <length prefix><message ID><payload>
@@ -314,4 +315,72 @@ int peer_msg_send(int sockfd, peer_msg2 *msg, const torrent_info2 *torrent)
   }
 
   return 0;
+}
+
+int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
+                          uint32_t len, peer_msg2 *out)
+{
+  std::cout << "enter peer_msg_recv_pastlen" << std::endl;
+  std::cout << "receiving message of length: " << len << std::endl;
+
+  if (0 == len) {
+    out->type = MSG_KEEPALIVE;
+    std::cout << "MSG_KEEPALIVE" << std::endl;
+    return 0;
+  }
+
+  assert(0);
+
+  return 0;
+}
+
+int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out)
+{
+  std::cout << "enter peer_msg_recv" << std::endl;
+  assert(torrent);
+
+  uint32_t len = 0;
+
+  if (peer_recv_buff(sockfd, (char *)&len, sizeof(uint32_t))) {
+    std::cout << "peer_recv_buff failed" << std::endl;
+    return -1;
+  }
+
+  len = ntohl(len);
+
+  return peer_msg_recv_pastlen(sockfd, torrent, len, out);
+}
+
+bool peer_msg_buff_nonempty(int sockfd)
+{
+  std::cout << "enter peer_msg_buff_nonempty" << std::endl;
+
+  uint32_t len = 0;
+  int n = recv(sockfd, (char *)&len, sizeof(uint32_t), MSG_PEEK | MSG_DONTWAIT);
+  if (n < 0) {
+    perror("recv");
+    return false;
+  }
+
+  if ((uint32_t)n < sizeof(uint32_t)) {
+    return false;
+  }
+
+  len = ntohl(len);
+
+  int bytes_avail = 0;
+  if (ioctl(sockfd, FIONREAD, &bytes_avail)) {
+    perror("ioctl");
+    return false;
+  }
+
+  std::cout << "bytes_avail: " << bytes_avail
+            << " , len: " << len << std::endl;
+
+  if ((unsigned)bytes_avail >= len + sizeof(uint16_t)) {
+    return true;
+  }
+  else {
+    return false;
+  }
 }
