@@ -275,6 +275,17 @@ static void *peer_connection(void *arg)
     pthread_exit(NULL);
   }
 
+  // send the initial bitfield
+  peer_msg2 bitmsg;
+  bitmsg.type = MSG_BITFIELD;
+  bitmsg.payload.bitfield.resize(torrent->pieces.size(), false);
+  std::cout << "peer_msg2.payload.bitfield: " << bitmsg.payload.bitfield
+            << std::endl;
+  if (peer_msg_send(sockfd, &bitmsg, torrent)) {
+    std::cout << "peer_msg_send failed" << std::endl;
+    pthread_exit(NULL);
+  }
+
   return NULL;
 }
 
