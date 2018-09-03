@@ -317,6 +317,17 @@ int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
   return 0;
 }
 
+inline bool valid_len(msg_type type, const torrent_info2 *torrent, uint32_t len)
+{
+  if (MSG_PIECE == type) {
+    return
+      (len >= (1 + 2 * sizeof(uint32_t) + 1)) &&
+      (len <= (1 + 2 * sizeof(uint32_t) + PEER_REQUEST_SIZE));
+  }
+
+  return (len == msg_length(type, torrent));
+}
+
 int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
                           uint32_t len, peer_msg2 *out)
 {
@@ -329,8 +340,129 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
     return 0;
   }
 
-  assert(0);
+  unsigned char type = 0;
+  if (peer_recv_buff(sockfd, (char *)&type, 1)) {
+    std::cout << "peer_recv_buff failed" << std::endl;
+    return -1;
+  }
 
+  if (type >= MSG_MAX) {
+    std::cout << "type greater than MSG_MAX" << std::endl;
+    return -1;
+  }
+
+  if (!valid_len((msg_type)type, torrent, len)) {
+    std::cout << "valid_len failed" << std::endl;
+    return -1;
+  }
+
+  out->type = (msg_type)type;
+  unsigned left = len - 1;
+
+  switch (type) {
+  case MSG_CHOKE:
+  case MSG_UNCHOKE:
+  case MSG_INTERESTED:
+  case MSG_NOT_INTERESTED: {
+    assert(left == 0);
+    break;
+  }
+  case MSG_PIECE: {
+    // TODO
+    break;
+  }
+  case MSG_BITFIELD: {
+    char *buff = new char[left];
+    memset(buff, 0, left);
+
+    if (peer_recv_buff(sockfd, buff, left)) {
+      std::cout << "peer_recv_buff MSG_BITFIELD failed" << std::endl;
+      delete[] buff;
+      return -1;
+    }
+
+    out->payload.bitfield.resize(left * CHAR_BIT, false);
+
+    for (unsigned i = 0; i < out->payload.bitfield.size(); ++i) {
+      if (BITFIELD_ISSET(i, buff)) {
+        out->payload.bitfield[i] = 1;
+      }
+      else {
+        out->payload.bitfield[i] = 0;
+      }
+    }
+
+    // bit 0 at the end
+    std::cout << out->payload.bitfield << std::endl;
+
+    delete[] buff;
+    break;
+  }
+  case MSG_REQUEST: {
+    char *buff = new char[left];
+    memset(buff, 0, left);
+
+    if (peer_recv_buff(sockfd, buff, left)) {
+      std::cout << "peer_recv_buff MSG_REQUEST failed" << std::endl;
+      delete[] buff;
+      return -1;
+    }
+
+    assert(left == 3 * sizeof(uint32_t));
+    uint32_t u32 = 0;
+
+    memcpy(&u32, buff + 0 * sizeof(uint32_t), sizeof(uint32_t));
+    out->payload.request.index = ntohl(u32);
+    std::cout << "request.index: " << ntohl(u32) << std::endl;
+
+    memcpy(&u32, buff + 1 * sizeof(uint32_t), sizeof(uint32_t));
+    out->payload.request.begin = ntohl(u32);
+    std::cout << "request.begin: " << ntohl(u32) << std::endl;
+
+    memcpy(&u32, buff + 2 * sizeof(uint32_t), sizeof(uint32_t));
+    out->payload.request.length = ntohl(u32);
+    std::cout << "request.length: " << ntohl(u32) << std::endl;
+
+    delete[] buff;
+    break;
+  }
+  case MSG_HAVE: {
+    assert(left == sizeof(uint32_t));
+    uint32_t u32 = 0;
+
+    if (peer_recv_buff(sockfd, (char *)&u32, left)) {
+      std::cout << "peer_recv_buff MSG_HAVE failed" << std::endl;
+      return -1;
+    }
+
+    out->payload.have = ntohl(u32);
+    std::cout << "have: " << ntohl(u32) << std::endl;
+    break;
+  }
+  case MSG_PORT: {
+    assert(left == sizeof(uint32_t));
+    uint32_t u32 = 0;
+
+    if (peer_recv_buff(sockfd, (char *)&u32, left)) {
+      std::cout << "peer_recv_buff MSG_PORT failed" << std::endl;
+      return -1;
+    }
+
+    out->payload.listen_port = ntohl(u32);
+    std::cout << "listen_port: " << ntohl(u32) << std::endl;
+    break;
+  }
+  case MSG_CANCEL: {
+    // TODO
+    assert(0);
+    break;
+  }
+  default:
+    return -1;
+  }
+
+  std::cout << "successfully received message from peer, type: "
+            << (unsigned)type << std::endl;
   return 0;
 }
 

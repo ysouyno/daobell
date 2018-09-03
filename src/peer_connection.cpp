@@ -239,6 +239,12 @@ void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
   std::cout << "unchoked peer" << std::endl;
 }
 
+void process_msg(int sockfd, const torrent_info2 *torrent,
+                 const peer_msg2 *msg, conn_state *state)
+{
+  std::cout << "enter process_msg" << std::endl;
+}
+
 int process_queued_msgs(int sockfd, const torrent_info2 *torrent,
                         conn_state *state)
 {
@@ -255,6 +261,8 @@ int process_queued_msgs(int sockfd, const torrent_info2 *torrent,
       std::cout << "peer_msg_recv failed" << std::endl;
       return -1;
     }
+
+    process_msg(sockfd, torrent, &msg, state);
   }
 
   return 0;

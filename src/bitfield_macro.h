@@ -27,4 +27,8 @@
      ~(1 << (CHAR_BIT - ((_index) % CHAR_BIT) - 1))); \
   } while(0)
 
+#define BITFIELD_ISSET(_index, _buff)                                   \
+  !!                                                                    \
+  ((_buff)[(_index) / CHAR_BIT] & (1 << (CHAR_BIT - ((_index) % CHAR_BIT) - 1)))
+
 #endif /* BITFIELD_MACRO_H */
