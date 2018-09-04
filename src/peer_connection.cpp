@@ -1,6 +1,7 @@
 #include "peer_connection.h"
 #include "peer_msg.h"
 #include "piece_request.h"
+#include "bitfield_macro.h"
 #include <iostream>
 #include <assert.h>
 #include <arpa/inet.h>
@@ -239,10 +240,111 @@ void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
   std::cout << "unchoked peer" << std::endl;
 }
 
+void show_interested(int sockfd, const torrent_info2 *torrent,
+                     conn_state *state)
+{
+  std::cout << "enter show_interested" << std::endl;
+
+  peer_msg2 interested_msg;
+  interested_msg.type = MSG_INTERESTED;
+
+  if (peer_msg_send(sockfd, torrent, &interested_msg)) {
+    std::cout << "peer_msg_send MSG_INTERESTED failed" << std::endl;
+    return;
+  }
+
+  state->local.interested = true;
+}
+
 void process_msg(int sockfd, const torrent_info2 *torrent,
                  const peer_msg2 *msg, conn_state *state)
 {
   std::cout << "enter process_msg" << std::endl;
+
+  bool interested = false;
+
+  switch (msg->type) {
+  case MSG_KEEPALIVE: {
+    break;
+  }
+  case MSG_CHOKE: {
+    state->local.choked = true;
+    std::cout << "i'm choked" << std::endl;
+    break;
+  }
+  case MSG_UNCHOKE: {
+    state->local.choked = false;
+    std::cout << "i'm unchoked" << std::endl;
+    break;
+  }
+  case MSG_INTERESTED: {
+    state->remote.interested = true;
+    std::cout << "the remote peer is interested in us" << std::endl;
+    break;
+  }
+  case MSG_NOT_INTERESTED: {
+    state->remote.interested = false;
+    std::cout << "the remote peer is not interested in us" << std::endl;
+    break;
+  }
+  case MSG_HAVE: {
+    if (!state->local.interested && state->local_have[msg->payload.have]) {
+      show_interested(sockfd, torrent, state);
+    }
+
+    state->peer_have[msg->payload.have] = 1;
+    break;
+  }
+  case MSG_BITFIELD: {
+    std::cout << "conn_state.peer_have: " << state->peer_have << std::endl;
+    assert(msg->payload.bitfield.num_blocks() ==
+           BITFIELD_NUM_BYTES(state->bitlen));
+    for (unsigned i = 0; i < state->peer_have.size(); ++i) {
+      state->peer_have[i] = msg->payload.bitfield[i];
+    }
+    std::cout << "conn_state.peer_have: " << state->peer_have << std::endl;
+
+    pthread_mutex_lock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+    for (unsigned i = 0; i < torrent->pieces.size(); ++i) {
+      if (torrent->sh.pieces_state.at(i) != PIECE_STATE_HAVE &&
+          state->peer_have[i]) {
+        interested = true;
+        std::cout << "torrent.sh.pieces_state [" << i << "] interested"
+                  << std::endl;
+        break;
+      }
+    }
+    pthread_mutex_unlock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+
+    if (interested) {
+      show_interested(sockfd, torrent, state);
+    }
+
+    break;
+  }
+  case MSG_REQUEST: {
+    std::cout << "push remote peer request:" << std::endl;
+    std::cout << "  index: " << msg->payload.request.index << std::endl;
+    std::cout << "  begin: " << msg->payload.request.begin << std::endl;
+    std::cout << " length: " << msg->payload.request.length << std::endl;
+    state->peer_requests.push(msg->payload.request);
+    break;
+  }
+  case MSG_PIECE: {
+    // TODO
+    break;
+  }
+  case MSG_CANCEL: {
+    // TODO
+    break;
+  }
+  case MSG_PORT: {
+    // TODO
+    break;
+  }
+  default:
+    break;
+  }
 }
 
 int process_queued_msgs(int sockfd, const torrent_info2 *torrent,

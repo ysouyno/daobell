@@ -393,7 +393,8 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
     }
 
     // bit 0 at the end
-    std::cout << out->payload.bitfield << std::endl;
+    std::cout << "peer_msg2.payload.bitfield: "
+              << out->payload.bitfield << std::endl;
 
     delete[] buff;
     break;
