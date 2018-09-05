@@ -2,6 +2,7 @@
 #define PIECE_REQUEST_H
 
 #include "dnld_file.h"
+#include "torrent_info2.h"
 #include <list>
 
 struct block_request
@@ -18,5 +19,8 @@ struct piece_request
   std::list<block_request> block_requests;
   unsigned blocks_left;
 };
+
+int piece_request_create(const torrent_info2 *torrent, unsigned index,
+                         piece_request *out);
 
 #endif /* PIECE_REQUEST_H */

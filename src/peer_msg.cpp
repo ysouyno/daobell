@@ -1,6 +1,7 @@
 #include "peer_msg.h"
 #include "peer_id.h"
 #include "bitfield_macro.h"
+#include "piece_request.h"
 #include <iostream>
 #include <string.h>
 #include <assert.h>
@@ -231,7 +232,8 @@ int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
     return 0;
   }
   case MSG_PIECE: {
-    // TODO
+    piece_msg *pmsg = &msg->payload.piece;
+    return peer_msg_send_piece(sockfd, torrent, pmsg);
   }
   case MSG_BITFIELD: {
     unsigned num_bytes = BITFIELD_NUM_BYTES(msg->payload.bitfield.size());
@@ -516,4 +518,21 @@ bool peer_msg_buff_nonempty(int sockfd)
   else {
     return false;
   }
+}
+
+int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
+                        const piece_msg *pmsg)
+{
+  std::cout << "--- enter peer_msg_send_piece [index: ]"
+            << pmsg->index << "] ---" << std::endl;
+
+  std::shared_ptr<piece_request> sp_piece_req =
+    std::make_shared<piece_request>();
+
+  if (piece_request_create(torrent, pmsg->index, sp_piece_req.get())) {
+    std::cout << "piece_request_create failed" << std::endl;
+    return -1;
+  }
+
+  return 0;
 }

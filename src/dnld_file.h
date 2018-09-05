@@ -20,7 +20,7 @@ struct dnld_file
 };
 
 dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size);
-
 int dnld_file_close_and_free(dnld_file *file);
+void dnld_file_get_file_mem(const dnld_file *file, file_mem *out);
 
 #endif /* DNLD_FILE_H */

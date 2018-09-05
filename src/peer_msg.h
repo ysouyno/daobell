@@ -65,5 +65,7 @@ int peer_recv_handshake(int sockfd, char out_info_hash[20],
 int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg);
 int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out);
 bool peer_msg_buff_nonempty(int sockfd);
+int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
+                        const piece_msg *pmsg);
 
 #endif /* PEER_MSG_H */

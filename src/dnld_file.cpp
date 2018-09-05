@@ -64,3 +64,9 @@ int dnld_file_close_and_free(dnld_file *file)
 
   return ret;
 }
+
+void dnld_file_get_file_mem(const dnld_file *file, file_mem *out)
+{
+  out->mem = file->data;
+  out->size = file->size;
+}
