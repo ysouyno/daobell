@@ -16,7 +16,7 @@ struct block_request
 struct piece_request
 {
   unsigned piece_index;
-  std::list<block_request> block_requests;
+  std::list<block_request *> block_requests;
   unsigned blocks_left;
 };
 
