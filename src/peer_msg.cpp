@@ -9,6 +9,8 @@
 #include <memory>
 #include <sys/ioctl.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 int peer_send_buff(int sockfd, const char *buff, size_t len)
 {
   std::cout << "enter peer_send_buff" << std::endl;
@@ -529,9 +531,63 @@ int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
   std::shared_ptr<piece_request> sp_piece_req =
     std::make_shared<piece_request>();
 
+  // init piece_requst's piece_index, block_requests and blocks_left
   if (piece_request_create(torrent, pmsg->index, sp_piece_req.get())) {
     std::cout << "piece_request_create failed" << std::endl;
     return -1;
+  }
+
+  // send piece_msg.index
+  uint32_t send_index = htonl(pmsg->index);
+  if (peer_send_buff(sockfd, (char *)&send_index, sizeof(uint32_t))) {
+    std::cout << "peer_send_buff piece_msg.index failed" << std::endl;
+    return -1;
+  }
+
+  // send piece_msg.begin
+  uint32_t send_begin = htonl(pmsg->begin);
+  if (peer_send_buff(sockfd, (char *)&send_begin, sizeof(uint32_t))) {
+    std::cout << "peer_send_buff piece_msg.begin failed" << std::endl;
+    return -1;
+  }
+
+  // send piece_request.block_requests.file_mems
+  size_t written = 0;
+  off_t offset = 0;
+
+  typedef std::list<block_request *> block_req_list;
+  typedef std::list<file_mem> file_mem_list;
+
+  for (block_req_list::iterator block_it = sp_piece_req->block_requests.begin();
+       block_it != sp_piece_req->block_requests.end();
+       ++block_it) {
+    if (*block_it) {
+      for (file_mem_list::iterator mem_it = (*block_it)->file_mems.begin();
+           mem_it != (*block_it)->file_mems.end();
+           ++mem_it) {
+        if (offset + (*mem_it).size > pmsg->begin) {
+          size_t mem_beg =
+            (offset > pmsg->begin) ? 0 : offset - pmsg->begin;
+          size_t mem_len =
+            MIN((*mem_it).size - mem_beg, pmsg->block_len - written);
+
+          if (peer_send_buff(sockfd,
+                             (char *)((*mem_it).mem) + mem_beg,
+                             mem_len)) {
+            std::cout << "peer_send_buff block failed" << std::endl;
+            return -1;
+          }
+
+          written += mem_len;
+        }
+
+        if (written == pmsg->block_len) {
+          return 0;
+        }
+
+        offset += (*mem_it).size;
+      }
+    }
   }
 
   return 0;
