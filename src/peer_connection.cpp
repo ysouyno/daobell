@@ -12,6 +12,7 @@
 #include <queue>
 
 #define PEER_CONNECT_TIMEOUT_SEC 5
+#define PEER_NUM_OUTSTANDING_REQUESTS 1
 
 struct peer_state
 {
@@ -30,7 +31,7 @@ struct conn_state
   unsigned blocks_sent;
   unsigned blocks_recvd;
   std::queue<request_msg> peer_requests;   // requests from peer
-  std::list<piece_request> local_requests; // requests from piece
+  std::list<piece_request *> local_requests; // requests from piece
 };
 
 void get_peer_ip(const peer_info *peer, char *out_str, size_t out_len)
@@ -256,6 +257,22 @@ void show_interested(int sockfd, const torrent_info2 *torrent,
   state->local.interested = true;
 }
 
+void show_not_interested(int sockfd, const torrent_info2 *torrent,
+                         conn_state *state)
+{
+  std::cout << "enter show_not_interested" << std::endl;
+
+  peer_msg2 not_interested_msg;
+  not_interested_msg.type = MSG_NOT_INTERESTED;
+
+  if (peer_msg_send(sockfd, torrent, &not_interested_msg)) {
+    std::cout << "peer_msg_send MSG_NOT_INTERESTED failed" << std::endl;
+    return;
+  }
+
+  state->local.interested = false;
+}
+
 void process_msg(int sockfd, const torrent_info2 *torrent,
                  const peer_msg2 *msg, conn_state *state)
 {
@@ -370,6 +387,59 @@ int process_queued_msgs(int sockfd, const torrent_info2 *torrent,
   return 0;
 }
 
+int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
+{
+  std::cout << "sending requests for pieces..." << std::endl;
+
+  int n = PEER_NUM_OUTSTANDING_REQUESTS - state->local_requests.size();
+  std::cout << "n = " << n << std::endl;
+  if (n <= 0) {
+    return 0;
+  }
+
+  bool not_interested = false;
+
+  for (int i = 0; i < n; ++i) {
+    unsigned req_index = 0;
+
+    if (torrent_next_request(torrent, &state->peer_have, &req_index)) {
+      std::cout << "not find a piece we can request" << std::endl;
+      not_interested = true;
+      break;
+    }
+
+    std::cout << "sending request for piece " << req_index << std::endl;
+
+    std::shared_ptr<piece_request> sp_request =
+      std::make_shared<piece_request>();
+    piece_request_create(torrent, req_index, sp_request.get());
+    state->local_requests.push_back(sp_request.get());
+
+    typedef std::list<block_request *>::iterator block_request_it;
+
+    for (block_request_it it = sp_request->block_requests.begin();
+         it != sp_request->block_requests.end();
+         ++it) {
+      peer_msg2 req_msg;
+      req_msg.type = MSG_REQUEST;
+      req_msg.payload.request.index = sp_request->piece_index;
+      req_msg.payload.request.begin = (*it)->begin;
+      req_msg.payload.request.length = (*it)->len;
+
+      if (peer_msg_send(sockfd, torrent, &req_msg)) {
+        std::cout << "peer_msg_send MSG_REQUEST failed" << std::endl;
+        return -1;
+      }
+    }
+  }
+
+  if (state->local.interested && not_interested) {
+    show_not_interested(sockfd, torrent, state);
+  }
+
+  return 0;
+}
+
 static void *peer_connection(void *arg)
 {
   std::cout << "enter peer_connection" << std::endl;
@@ -438,7 +508,7 @@ static void *peer_connection(void *arg)
   unchoke(sockfd, torrent, state.get());
 
   int i = 0;
-  while (true && i++ < 1) {
+  while (true && i++ < 31) {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     usleep(250 * 1000);
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -448,6 +518,18 @@ static void *peer_connection(void *arg)
     if (process_queued_msgs(sockfd, torrent, state.get())) {
       std::cout << "process_queued_msgs failed" << std::endl;
       pthread_exit(NULL);
+    }
+
+    if (state->blocks_recvd > state->blocks_sent) {
+      // TODO
+    }
+    else {
+      if (!state->local.choked && state->local.interested) {
+        if (send_requests(sockfd, torrent, state.get())) {
+          std::cout << "send_requests failed" << std::endl;
+          pthread_exit(NULL);
+        }
+      }
     }
   }
 

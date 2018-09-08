@@ -264,3 +264,48 @@ int torrent_make_bitfield(const torrent_info2 *torrent,
 
   return 0;
 }
+
+int torrent_next_request(torrent_info2 *torrent,
+                         boost::dynamic_bitset<> *peer_have,
+                         unsigned *out)
+{
+  std::cout << "enter torrent_next_request" << std::endl;
+
+  unsigned request = 0, not_request = 0;
+  bool has_request = false, has_not_request = false;
+
+  assert(torrent->pieces.size() == torrent->sh.pieces_state.size());
+  assert(torrent->pieces.size() == (*peer_have).size());
+
+  pthread_mutex_lock(&torrent->sh_mutex);
+
+  for (unsigned i = 0; i < torrent->pieces.size(); ++i) {
+    if (torrent->sh.pieces_state[i] == PIECE_STATE_REQUESTED &&
+        (*peer_have)[i] == 1) {
+      request = i;
+      has_request = true;
+    }
+
+    if (torrent->sh.pieces_state[i] == PIECE_STATE_NOT_REQUESTED &&
+        (*peer_have)[i] == 1) {
+      not_request = i;
+      has_not_request = true;
+      break;
+    }
+  }
+
+  if (!has_request && !has_not_request) {
+    pthread_mutex_unlock(&torrent->sh_mutex);
+    return -1;
+  }
+
+  unsigned ret = has_not_request ? not_request : request;
+  torrent->sh.pieces_state[ret] = PIECE_STATE_REQUESTED;
+
+  pthread_mutex_unlock(&torrent->sh_mutex);
+
+  std::cout << "requesting piece: " << ret << std::endl;
+  *out = ret;
+
+  return 0;
+}

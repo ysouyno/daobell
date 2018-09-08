@@ -59,5 +59,8 @@ struct torrent_info2
 torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir);
 int torrent_make_bitfield(const torrent_info2 *torrent,
                           boost::dynamic_bitset<> *out);
+int torrent_next_request(torrent_info2 *torrent,
+                         boost::dynamic_bitset<> *peer_have,
+                         unsigned *out);
 
 #endif /* TORRENT_INFO2_H */
