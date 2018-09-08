@@ -174,6 +174,7 @@ uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
   case MSG_REQUEST: {
     ret = 1 + 3 * sizeof(uint32_t);
     std::cout << "MSG_REQUEST length: " << ret << std::endl;
+    break;
   }
   case MSG_HAVE:
   case MSG_PORT: {
