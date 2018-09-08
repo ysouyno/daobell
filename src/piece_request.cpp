@@ -108,3 +108,21 @@ int piece_request_create(const torrent_info2 *torrent, unsigned index,
 
   return 0;
 }
+
+block_request *piece_request_block_at(const piece_request *request,
+                                      off_t offset)
+{
+  std::cout << "enter piece_request_block_at" << std::endl;
+
+  typedef std::list<block_request *>::const_iterator block_request_it;
+
+  for (block_request_it it = request->block_requests.begin();
+       it != request->block_requests.end();
+       ++it) {
+    if ((*it)->begin == offset) {
+      return (*it);
+    }
+  }
+
+  return NULL;
+}

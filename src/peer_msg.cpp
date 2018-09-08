@@ -371,8 +371,14 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
     assert(left == 0);
     break;
   }
-  case MSG_PIECE: {
-    // TODO
+  case MSG_PIECE: { // write to the mmap's file directly
+    assert(left > 0);
+
+    if (peer_msg_recv_piece(sockfd, torrent, left, out)) {
+      std::cout << "peer_msg_recv_piece MSG_PIECE failed" << std::endl;
+      return -1;
+    }
+
     break;
   }
   case MSG_BITFIELD: {
@@ -525,7 +531,7 @@ bool peer_msg_buff_nonempty(int sockfd)
 int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
                         const piece_msg *pmsg)
 {
-  std::cout << "--- enter peer_msg_send_piece [index: ]"
+  std::cout << "--- enter peer_msg_send_piece [index: "
             << pmsg->index << "] ---" << std::endl;
 
   std::shared_ptr<piece_request> sp_piece_req =
@@ -587,6 +593,51 @@ int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
 
         offset += (*mem_it).size;
       }
+    }
+  }
+
+  return 0;
+}
+
+int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
+                        uint32_t len, peer_msg2 *out)
+{
+  std::cout << "--- enter peer_msg_recv_piece [len: "
+            << len << "] ---" << std::endl;
+
+  uint32_t u32 = 0;
+  uint32_t left = len;
+
+  if (peer_recv_buff(sockfd, (char *)&u32, sizeof(uint32_t))) {
+    return -1;
+  }
+  out->payload.piece.index = ntohl(u32);
+  left -= sizeof(uint32_t);
+
+  if (peer_recv_buff(sockfd, (char *)&u32, sizeof(uint32_t))) {
+    return -1;
+  }
+  out->payload.piece.begin = ntohl(u32);
+  left -= sizeof(uint32_t);
+
+  out->payload.piece.block_len = left;
+
+  std::shared_ptr<piece_request> sp_request =
+    std::make_shared<piece_request>();
+  piece_request_create(torrent, out->payload.piece.index, sp_request.get());
+
+  block_request *block_req =
+    piece_request_block_at(sp_request.get(), out->payload.piece.begin);
+  assert(block_req);
+
+  for (std::list<file_mem>::iterator it = block_req->file_mems.begin();
+       it != block_req->file_mems.end();
+       ++it) {
+    std::cout << "writing " << (*it).size << " bytes to "
+              << (*it).mem << std::endl;
+
+    if (peer_recv_buff(sockfd, (char *)(*it).mem, (*it).size)) {
+      std::cout << "peer_recv_buff piece bytes failed" << std::endl;
     }
   }
 

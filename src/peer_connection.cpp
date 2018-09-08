@@ -273,8 +273,14 @@ void show_not_interested(int sockfd, const torrent_info2 *torrent,
   state->local.interested = false;
 }
 
-void process_msg(int sockfd, const torrent_info2 *torrent,
-                 const peer_msg2 *msg, conn_state *state)
+void process_piece_msg(int sockfd, const piece_msg *msg,
+                       torrent_info2 *torrent, conn_state *state)
+{
+  std::cout << "enter process_piece_msg" << std::endl;
+}
+
+void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
+                 conn_state *state)
 {
   std::cout << "enter process_msg" << std::endl;
 
@@ -348,7 +354,8 @@ void process_msg(int sockfd, const torrent_info2 *torrent,
     break;
   }
   case MSG_PIECE: {
-    // TODO
+    process_piece_msg(sockfd, &msg->payload.piece, torrent, state);
+    state->blocks_recvd++;
     break;
   }
   case MSG_CANCEL: {
@@ -364,10 +371,9 @@ void process_msg(int sockfd, const torrent_info2 *torrent,
   }
 }
 
-int process_queued_msgs(int sockfd, const torrent_info2 *torrent,
-                        conn_state *state)
+int process_queued_msgs(int sockfd, torrent_info2 *torrent, conn_state *state)
 {
-  std::cout << "process_queued_msgs" << std::endl;
+  std::cout << "enter process_queued_msgs" << std::endl;
 
   while (peer_msg_buff_nonempty(sockfd)) {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -508,7 +514,7 @@ static void *peer_connection(void *arg)
   unchoke(sockfd, torrent, state.get());
 
   int i = 0;
-  while (true && i++ < 31) {
+  while (true && i++ < 100) {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     usleep(250 * 1000);
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -520,7 +526,7 @@ static void *peer_connection(void *arg)
       pthread_exit(NULL);
     }
 
-    if (state->blocks_recvd > state->blocks_sent) {
+    if (state->peer_requests.size() > 0) {
       // TODO
     }
     else {

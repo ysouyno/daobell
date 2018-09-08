@@ -22,5 +22,7 @@ struct piece_request
 
 int piece_request_create(const torrent_info2 *torrent, unsigned index,
                          piece_request *out);
+block_request *piece_request_block_at(const piece_request *request,
+                                      off_t offset);
 
 #endif /* PIECE_REQUEST_H */

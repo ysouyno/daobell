@@ -67,5 +67,7 @@ int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out);
 bool peer_msg_buff_nonempty(int sockfd);
 int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
                         const piece_msg *pmsg);
+int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
+                        uint32_t len, peer_msg2 *out);
 
 #endif /* PEER_MSG_H */
