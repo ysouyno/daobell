@@ -46,7 +46,6 @@ dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size)
 
   close(fd);
 
-  std::cout << "create and open file success: " << file->path << std::endl;
   return file;
 }
 

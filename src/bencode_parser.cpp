@@ -93,7 +93,6 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const c
   case '9': {
     *end_p = p;
     size_t length = strtol(p, const_cast<char **>(end_p), 10);
-    std::cout << "length: " << length << std::endl;
     (*end_p)++;
 
     std::vector<char> vec_temp(*end_p, *end_p + length);
@@ -106,7 +105,6 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const c
     *end_p = p;
     p++;
     size_t number = strtol(p, const_cast<char **>(end_p), 10);
-    std::cout << "number: " << number << std::endl;
     (*end_p)++;
 
     return std::make_shared<bencode_integer>(number);

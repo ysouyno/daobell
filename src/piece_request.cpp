@@ -33,10 +33,7 @@ block_request *next_block_request(const torrent_info2 *torrent,
                                   size_t piece_len,
                                   unsigned files_vec_index)
 {
-  std::cout << "enter next_block_request" << std::endl;
-
   if (0 == *left) {
-    std::cout << "left is zero" << std::endl;
     return NULL;
   }
 

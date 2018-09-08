@@ -4,10 +4,7 @@
 
 int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
 {
-  std::cout << "enter create_pieces_vector" << std::endl;
   assert(pieces->get_value().length() % 20 == 0);
-
-  std::cout << "pieces's length: " << pieces->get_value().length() << std::endl;
 
   for (unsigned i = 0; i < pieces->get_value().length(); i += 20) {
     torrent->pieces.push_back(pieces->get_value().substr(i, 20));
@@ -21,14 +18,12 @@ int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
 int populate_files_from_list(bencode_list *files, const std::string &destdir,
                              const std::string &name, torrent_info2 *torrent)
 {
-  std::cout << "enter populate_files_from_list" << std::endl;
   int ret = 0;
 
   std::string path = destdir;
   path += "/";
   path += name;
 
-  std::cout << "creating directory: " << path << std::endl;
   mkdir(path.c_str(), 0777);
 
   for (auto &f : *files) {
@@ -42,12 +37,10 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
     if (value) {
       dict_map dict = value->get_value();
       for (dict_map::iterator it = dict.begin(); it != dict.end(); ++it) {
-        std::cout << "it->first: " << it->first << std::endl;
         if (it->first == "length") {
           bencode_integer *dict_key =
             down_cast<bencode_integer>(it->second.get());
           len = dict_key->get_value();
-          std::cout << "    lenght: " << len << std::endl;
         }
 
         if (it->first == "path") {
@@ -66,10 +59,8 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
       }
     }
 
-    std::cout << "    path: " << path << std::endl;
     dnld_file *file = dnld_file_create_and_open(path, len);
     if (file) {
-      std::cout << "dnld_file_create_and_open success" << std::endl;
       torrent->files.push_back(file);
 
       // TODO: don't forget close and free somewhere
@@ -83,7 +74,6 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
 int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir,
                             torrent_info2 *torrent)
 {
-  std::cout << "enter populate_info_from_dict" << std::endl;
   int ret = 0;
   bool multifile = false;
   std::string file_name;
@@ -96,7 +86,6 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
       bencode_string *value = down_cast<bencode_string>(it->second.get());
       if (value) {
         file_name = value->get_value();
-        std::cout << "name: " << file_name << std::endl;
       }
     }
   }
@@ -113,7 +102,6 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
       bencode_integer *value = down_cast<bencode_integer>(it->second.get());
       if (value) {
         torrent->piece_length = value->get_value();
-        std::cout << "piece length: " << torrent->piece_length << std::endl;
       }
     }
 
@@ -121,12 +109,10 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
       bencode_integer *value = down_cast<bencode_integer>(it->second.get());
       if (value) {
         len = value->get_value();
-        std::cout << "length: " << len << std::endl;
       }
     }
 
     if (it->first == "files") {
-      std::cout << "found files" << std::endl;
       multifile = true;
 
       // files: a list of dictionaries, one for each file. Each dictionary in
@@ -150,8 +136,6 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
     path += "/";
     path += file_name;
 
-    std::cout << "path: " << path << std::endl;
-
     dnld_file *file = dnld_file_create_and_open(path, len);
     if (file) {
       std::cout << "dnld_file_create_and_open success" << std::endl;
@@ -170,8 +154,6 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
 
 torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 {
-  std::cout << "enter torrent_init" << std::endl;
-
   torrent_info2 *ret = new torrent_info2;
   // memset(ret, 0, sizeof(torrent_info2)); // fix segmentation fault
 
@@ -183,7 +165,6 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       bencode_string *value = down_cast<bencode_string>(it->second.get());
       if (value) {
         ret->announce = value->get_value();
-        std::cout << "announce: " << ret->announce << std::endl;
       }
     }
 
@@ -199,12 +180,10 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       bencode_integer *value = down_cast<bencode_integer>(it->second.get());
       if (value) {
         ret->creation_date = value->get_value();
-        std::cout << "creation date: " << ret->creation_date << std::endl;
       }
     }
 
     if (it->first == "info") {
-      std::cout << "found info" << std::endl;
       // compute info_hash
       bencode_value_base *info_dict = it->second.get();
 
@@ -216,10 +195,6 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
       sha1_compute(encoded_info_dict.c_str(), encoded_info_dict.size(),
                    sha1_result);
 
-      for (int i = 0; i < 20; ++i) {
-        printf("%02x", (unsigned char)sha1_result[i]);
-      }
-      printf("\n");
       memcpy(ret->info_hash, sha1_result, 20);
 
       bencode_dictionary *value =
@@ -235,7 +210,6 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   ret->sh.pieces_state.resize(ret->pieces.size());
   ret->sh.pieces_state.shrink_to_fit();
   ret->sh.pieces_left = ret->pieces.size();
-  std::cout << "torrent::sh::pieces_left: " << ret->pieces.size() << std::endl;
   ret->sh.uploaded = 0;
   ret->sh.downloaded = 0;
   ret->sh.completed = false;
@@ -269,8 +243,6 @@ int torrent_next_request(torrent_info2 *torrent,
                          boost::dynamic_bitset<> *peer_have,
                          unsigned *out)
 {
-  std::cout << "enter torrent_next_request" << std::endl;
-
   unsigned request = 0, not_request = 0;
   bool has_request = false, has_not_request = false;
 

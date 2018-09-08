@@ -7,8 +7,6 @@
 int build_http_request(http_url_parser *url, tracker_announce_req *req,
                        std::string &out_str)
 {
-  std::cout << "enter build_http_request" << std::endl;
-
   if (!req) {
     std::cout << "param req is nullptr" << std::endl;
     return -1;
@@ -83,8 +81,6 @@ int build_http_request(http_url_parser *url, tracker_announce_req *req,
 
 int tracker_connect(http_url_parser *url)
 {
-  std::cout << "enter tracker_connect" << std::endl;
-
   struct addrinfo hints;
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_UNSPEC;
@@ -151,8 +147,6 @@ int tracker_send_all(int sockfd, const char *buff, size_t len)
 
 int content_from_tracker_resp(char *buff, size_t len, std::string &out_str)
 {
-  std::cout << "enter content_from_tracker_resp" << std::endl;
-
   char *line = NULL;
   char *saveptr = NULL;
   bool chuncked = false;
@@ -200,8 +194,6 @@ int content_from_tracker_resp(char *buff, size_t len, std::string &out_str)
 
 int tracker_recv_resp(int sockfd, std::string &out_str)
 {
-  std::cout << "enter tracker_recv_resp" << std::endl;
-
   char buff[1024] = {0};
   ssize_t total_recv = 0;
   ssize_t ret = 0;
@@ -217,8 +209,6 @@ int tracker_recv_resp(int sockfd, std::string &out_str)
     total_recv += ret;
   } while (ret > 0);
 
-  std::cout << buff << std::endl;
-
   if (content_from_tracker_resp(buff, total_recv, out_str)) {
     std::cout << "content_from_tracker_resp failed" << std::endl;
     return -1;
@@ -232,13 +222,8 @@ int tracker_recv_resp(int sockfd, std::string &out_str)
 std::shared_ptr<tracker_announce_resp>
 tracker_announce(const std::string &url, tracker_announce_req *req)
 {
-  std::cout << "enter tracker_announce" << std::endl;
-
-  std::cout << "announce url: " << url << std::endl;
-
   std::shared_ptr<http_url_parser> url_parser =
     std::make_shared<http_url_parser>(url);
-  std::cout << "url's scheme: " << url_parser->scheme_ << std::endl;
 
   if (url_parser->scheme_ == "https" ||
       url_parser->scheme_ == "udp") {

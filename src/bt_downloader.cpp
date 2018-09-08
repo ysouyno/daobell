@@ -22,8 +22,6 @@ struct tracker_arg
 
 std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
 {
-  std::cout << "enter create_tracker_request" << std::endl;
-
   const tracker_arg *targ = (tracker_arg *)arg;
   std::shared_ptr<tracker_announce_req> ret =
     std::make_shared<tracker_announce_req>();
@@ -54,7 +52,6 @@ std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
 
 int create_peer_connection(peer_info *peer, torrent_info2 *torrent)
 {
-  std::cout << "enter create_peer_connection" << std::endl;
   assert(peer);
   assert(torrent);
 
@@ -76,8 +73,6 @@ int create_peer_connection(peer_info *peer, torrent_info2 *torrent)
 
 static void *periodic_announce(void *arg)
 {
-  std::cout << "periodic_announce" << std::endl;
-
   const tracker_arg *targ = (tracker_arg *)arg;
   bool completed = false;
   unsigned interval = 0;
@@ -89,9 +84,8 @@ static void *periodic_announce(void *arg)
   bool started = false;
   int i = 0;
   while (true && i++ < 1) {
-    std::cout << "while (true) start" << std::endl;
+    std::cout << "periodic_announce while (i++ < 1) start" << std::endl;
     std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
-
 
     if (!started) {
       req->event = TORRENT_EVENT_STARTED;

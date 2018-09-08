@@ -49,8 +49,6 @@ int parse_peerlist_string(const bencode_string *value,
 std::shared_ptr<tracker_announce_resp>
 tracker_resp_parse(const std::string &resp_str)
 {
-  std::cout << "enter tracker_resp_parse" << std::endl;
-
   bencode_parser bp(resp_str.c_str());
   bencode_value_ptr meta = bp.get_value();
   assert(meta);
@@ -133,6 +131,7 @@ tracker_resp_parse(const std::string &resp_str)
         std::cout << "ret->peers's size(): " << ret->peers.size() << std::endl;
       }
       else {
+        // TODO
         std::cout << "dictionary model" << std::endl;
       }
     }

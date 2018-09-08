@@ -13,8 +13,6 @@
 
 int peer_send_buff(int sockfd, const char *buff, size_t len)
 {
-  std::cout << "enter peer_send_buff" << std::endl;
-
   unsigned total_sent = 0;
   while (total_sent < len) {
     ssize_t sent = send(sockfd, buff, len - total_sent, 0);
@@ -37,8 +35,6 @@ int peer_send_buff(int sockfd, const char *buff, size_t len)
 
 int peer_recv_buff(int sockfd, char *buff, size_t len)
 {
-  std::cout << "enter peer_recv_buff" << std::endl;
-
   unsigned total_recv = 0;
   ssize_t nb = 0;
 
@@ -69,8 +65,6 @@ int peer_recv_buff(int sockfd, char *buff, size_t len)
 // https://wiki.theory.org/index.php/BitTorrentSpecification#Handshake
 int peer_send_handshake(int sockfd, char info_hash[20])
 {
-  std::cout << "enter peer_send_handshake" << std::endl;
-
   const char *pstr = "BitTorrent protocol";
   unsigned char pstrlen = strlen(pstr);
   const char reserved[8] = {0};
@@ -102,8 +96,6 @@ int peer_send_handshake(int sockfd, char info_hash[20])
 int peer_recv_handshake(int sockfd, char out_info_hash[20],
                         char out_peer_id[20], bool peer_id)
 {
-  std::cout << "enter peer_recv_handshake" << std::endl;
-
   const char *pstr = "BitTorrent protocol";
   unsigned char pstrlen = strlen(pstr);
   const char reserved[8] = {0};
@@ -150,7 +142,6 @@ int peer_recv_handshake(int sockfd, char out_info_hash[20],
 
 uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
 {
-  std::cout << "enter msg_length" << std::endl;
   assert(torrent);
 
   uint32_t ret = 0;
@@ -158,33 +149,27 @@ uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
   switch (type) {
   case MSG_KEEPALIVE: {
     ret = 0;
-    std::cout << "MSG_KEEPALIVE length: " << ret << std::endl;
     break;
   }
   case MSG_PIECE: {
     ret = 1 + 2 * sizeof(uint32_t) + PEER_REQUEST_SIZE;
-    std::cout << "MSG_PIECE length: " << ret << std::endl;
     break;
   }
   case MSG_BITFIELD: {
     ret = 1 + BITFIELD_NUM_BYTES(torrent->pieces.size());
-    std::cout << "MSG_BITFIELD length: " << ret << std::endl;
     break;
   }
   case MSG_REQUEST: {
     ret = 1 + 3 * sizeof(uint32_t);
-    std::cout << "MSG_REQUEST length: " << ret << std::endl;
     break;
   }
   case MSG_HAVE:
   case MSG_PORT: {
     ret = 1 + sizeof(uint32_t);
-    std::cout << "MSG_HAVE or MSG_PORT length: " << ret << std::endl;
     break;
   }
   default: {
     ret = 1;
-    std::cout << "MSG_* length: " << ret << std::endl;
     break;
   }
   }
@@ -200,13 +185,12 @@ int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
   //   message ID   : is a single decimal byte
   //   payload      : is message dependent
 
-  std::cout << "enter peer_msg_send" << std::endl;
   assert(msg);
   assert(torrent);
 
   uint32_t len = msg_length(msg->type, torrent);
-  std::cout << "sending message (type: " << msg->type << "), len: "
-            << len << std::endl;
+  std::cout << "sending message (" << query_msg_type_text(msg->type).c_str()
+            << "), len: " << len << std::endl;
   len = htonl(len);
 
   // send <length prefix>
@@ -240,17 +224,14 @@ int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
   }
   case MSG_BITFIELD: {
     unsigned num_bytes = BITFIELD_NUM_BYTES(msg->payload.bitfield.size());
-    std::cout << "num_bytes: " << num_bytes << std::endl;
     char *bitfield_payload = new char[num_bytes];
     memset(bitfield_payload, 0, num_bytes);
 
     for (unsigned i = 0; i < msg->payload.bitfield.size(); ++i) {
       if (msg->payload.bitfield[i]) {
-        std::cout << "bit: " << i << " set" << std::endl;
         BITFIELD_SET(i, bitfield_payload);
       }
       else {
-        std::cout << "bit: " << i << " clr" << std::endl;
         BITFIELD_CLR(i, bitfield_payload);
       }
     }
@@ -336,12 +317,10 @@ inline bool valid_len(msg_type type, const torrent_info2 *torrent, uint32_t len)
 int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
                           uint32_t len, peer_msg2 *out)
 {
-  std::cout << "enter peer_msg_recv_pastlen" << std::endl;
   std::cout << "receiving message of length: " << len << std::endl;
 
   if (0 == len) {
     out->type = MSG_KEEPALIVE;
-    std::cout << "MSG_KEEPALIVE" << std::endl;
     return 0;
   }
 
@@ -473,14 +452,14 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
     return -1;
   }
 
-  std::cout << "successfully received message from peer, type: "
-            << (unsigned)type << std::endl;
+  std::cout << "successfully received message ("
+            << query_msg_type_text(type).c_str() << "), len: "
+            << len << std::endl;
   return 0;
 }
 
 int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out)
 {
-  std::cout << "enter peer_msg_recv" << std::endl;
   assert(torrent);
 
   uint32_t len = 0;
@@ -497,8 +476,6 @@ int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out)
 
 bool peer_msg_buff_nonempty(int sockfd)
 {
-  std::cout << "enter peer_msg_buff_nonempty" << std::endl;
-
   uint32_t len = 0;
   int n = recv(sockfd, (char *)&len, sizeof(uint32_t), MSG_PEEK | MSG_DONTWAIT);
   if (n < 0) {
@@ -519,7 +496,7 @@ bool peer_msg_buff_nonempty(int sockfd)
   }
 
   std::cout << "bytes_avail: " << bytes_avail
-            << " , len: " << len << std::endl;
+            << ", len: " << len << std::endl;
 
   if ((unsigned)bytes_avail >= len + sizeof(uint16_t)) {
     return true;
@@ -643,4 +620,50 @@ int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
   }
 
   return 0;
+}
+
+std::string query_msg_type_text(int type)
+{
+  std::string ret;
+
+  switch (type) {
+  case MSG_KEEPALIVE:
+    ret = "HAVE";
+    break;
+  case MSG_CHOKE:
+    ret = "CHOKE";
+    break;
+  case MSG_UNCHOKE:
+    ret = "UNCHOKE";
+    break;
+  case MSG_INTERESTED:
+    ret = "INTERESTED";
+    break;
+  case MSG_NOT_INTERESTED:
+    ret = "NOT INTERESTED";
+    break;
+  case MSG_HAVE:
+    ret = "HAVE";
+    break;
+  case MSG_BITFIELD:
+    ret = "BITFIELD";
+    break;
+  case MSG_REQUEST:
+    ret = "REQUEST";
+    break;
+  case MSG_PIECE:
+    ret = "PIECE";
+    break;
+  case MSG_CANCEL:
+    ret = "CANCEL";
+    break;
+  case MSG_PORT:
+    ret = "PORT";
+    break;
+  default:
+    ret = "UNKNOW MESSAGE";
+    break;
+  }
+
+  return ret;
 }

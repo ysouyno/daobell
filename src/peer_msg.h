@@ -69,5 +69,6 @@ int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
                         const piece_msg *pmsg);
 int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
                         uint32_t len, peer_msg2 *out);
+std::string query_msg_type_text(int type);
 
 #endif /* PEER_MSG_H */

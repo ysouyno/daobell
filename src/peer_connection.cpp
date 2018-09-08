@@ -30,7 +30,7 @@ struct conn_state
   size_t bitlen;
   unsigned blocks_sent;
   unsigned blocks_recvd;
-  std::queue<request_msg> peer_requests;   // requests from peer
+  std::queue<request_msg> peer_requests;  // requests from peer
   std::list<piece_request *> local_requests; // requests from piece
 };
 
@@ -49,8 +49,6 @@ void get_peer_ip(const peer_info *peer, char *out_str, size_t out_len)
 
 int peer_connect(peer_arg *arg)
 {
-  std::cout << "enter peer_connect" << std::endl;
-
   char ipstr[INET6_ADDRSTRLEN] = {0};
   get_peer_ip(&arg->peer, ipstr, sizeof(ipstr));
 
@@ -120,7 +118,6 @@ int peer_connect(peer_arg *arg)
 int handshake(int sockfd, const peer_arg *parg, char peer_id[20],
               char info_hash[20], torrent_info2 **out)
 {
-  std::cout << "enter handshake" << std::endl;
   assert(parg);
 
   if (parg->has_torrent) { // download from peer
@@ -163,8 +160,6 @@ void peer_connection_queue_name(pthread_t thread, char *out, size_t len)
 
 mqd_t peer_queue_open(int flags)
 {
-  std::cout << "enter peer_queue_open" << std::endl;
-
   char queue_name[64] = {0};
   peer_connection_queue_name(pthread_self(), queue_name, sizeof(queue_name));
 
@@ -190,7 +185,6 @@ mqd_t peer_queue_open(int flags)
 
 std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
 {
-  std::cout << "enter conn_state_init" << std::endl;
   assert(torrent);
 
   std::shared_ptr<conn_state> ret = std::make_shared<conn_state>();
@@ -202,20 +196,13 @@ std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
   ret->local.interested = false;
   ret->remote.choked = true;
   ret->remote.interested = false;
-
   ret->bitlen = torrent->pieces.size();
-  std::cout << "conn_state.bitlen: " << ret->bitlen << std::endl;
-
   ret->peer_have.resize(ret->bitlen, false);
-  std::cout << "conn_state.peer_have:" << ret->peer_have << std::endl;
-
   ret->peer_wants.resize(ret->bitlen, false);
-  std::cout << "conn_state.peer_wants: " << ret->peer_wants << std::endl;
 
   pthread_mutex_lock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
   torrent_make_bitfield(torrent, &(ret->local_have));
   pthread_mutex_unlock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
-  std::cout << "conn_state.local_have: " << ret->local_have << std::endl;
 
   ret->blocks_sent = 0;
   ret->blocks_recvd = 0;
@@ -225,7 +212,6 @@ std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
 
 void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
 {
-  std::cout << "enter unchoke" << std::endl;
   assert(state);
   assert(torrent);
 
@@ -244,8 +230,6 @@ void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
 void show_interested(int sockfd, const torrent_info2 *torrent,
                      conn_state *state)
 {
-  std::cout << "enter show_interested" << std::endl;
-
   peer_msg2 interested_msg;
   interested_msg.type = MSG_INTERESTED;
 
@@ -282,8 +266,6 @@ void process_piece_msg(int sockfd, const piece_msg *msg,
 void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
                  conn_state *state)
 {
-  std::cout << "enter process_msg" << std::endl;
-
   bool interested = false;
 
   switch (msg->type) {
@@ -373,8 +355,6 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
 
 int process_queued_msgs(int sockfd, torrent_info2 *torrent, conn_state *state)
 {
-  std::cout << "enter process_queued_msgs" << std::endl;
-
   while (peer_msg_buff_nonempty(sockfd)) {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_testcancel();
@@ -395,8 +375,6 @@ int process_queued_msgs(int sockfd, torrent_info2 *torrent, conn_state *state)
 
 int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
 {
-  std::cout << "sending requests for pieces..." << std::endl;
-
   int n = PEER_NUM_OUTSTANDING_REQUESTS - state->local_requests.size();
   std::cout << "n = " << n << std::endl;
   if (n <= 0) {
@@ -448,7 +426,6 @@ int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
 
 static void *peer_connection(void *arg)
 {
-  std::cout << "enter peer_connection" << std::endl;
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
   peer_arg *parg = (peer_arg *)arg;
@@ -515,6 +492,7 @@ static void *peer_connection(void *arg)
 
   int i = 0;
   while (true && i++ < 100) {
+    std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     usleep(250 * 1000);
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -537,6 +515,7 @@ static void *peer_connection(void *arg)
         }
       }
     }
+    std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
   }
 
   return NULL;
@@ -544,8 +523,6 @@ static void *peer_connection(void *arg)
 
 int peer_connection_create(pthread_t *thread, peer_arg *arg)
 {
-  std::cout << "enter peer_connection_create" << std::endl;
-
   if (pthread_create(thread, NULL, peer_connection, (void *)arg)) {
     std::cout << "pthread_create peer_connection failed" << std::endl;
     return -1;
