@@ -281,3 +281,27 @@ int torrent_next_request(torrent_info2 *torrent,
 
   return 0;
 }
+
+bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index)
+{
+  std::cout << "enter torrent_sha1_verify" << std::endl;
+
+  return true;
+}
+
+int torrent_complete(torrent_info2 *torrent)
+{
+  pthread_mutex_lock(&torrent->sh_mutex);
+  torrent->sh.completed = true;
+  // TODO torrent state
+  pthread_mutex_unlock(&torrent->sh_mutex);
+
+  for (std::vector<dnld_file *>::iterator it = torrent->files.begin();
+       it != torrent->files.end();
+       ++it) {
+    dnld_file_complete(*it);
+  }
+
+  std::cout << "torrent completed" << std::endl;
+  return 0;
+}

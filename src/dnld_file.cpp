@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <iostream>
+#include <assert.h>
 
 dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size)
 {
@@ -68,4 +69,19 @@ void dnld_file_get_file_mem(const dnld_file *file, file_mem *out)
 {
   out->mem = file->data;
   out->size = file->size;
+}
+
+int dnld_file_complete(dnld_file *file)
+{
+  std::string old_path = file->path;
+
+  size_t pos = file->path.find_last_of(".incomplete");
+  if (std::string::npos != pos) {
+    file->path = file->path.substr(0, pos);
+    std::cout << "new path: " << file->path << std::endl;
+
+    rename(old_path.c_str(), file->path.c_str());
+  }
+
+  return 0;
 }

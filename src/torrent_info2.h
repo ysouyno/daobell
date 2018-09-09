@@ -62,5 +62,7 @@ int torrent_make_bitfield(const torrent_info2 *torrent,
 int torrent_next_request(torrent_info2 *torrent,
                          boost::dynamic_bitset<> *peer_have,
                          unsigned *out);
+bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index);
+int torrent_complete(torrent_info2 *torrent);
 
 #endif /* TORRENT_INFO2_H */

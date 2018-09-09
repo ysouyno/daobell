@@ -257,10 +257,92 @@ void show_not_interested(int sockfd, const torrent_info2 *torrent,
   state->local.interested = false;
 }
 
+void handle_piece_dnld_completion(int sockfd, torrent_info2 *torrent,
+                                  unsigned index)
+{
+  assert(index < torrent->pieces.size());
+
+  bool completed = false;
+  unsigned pieces_left = 0;
+
+  pthread_mutex_lock(&torrent->sh_mutex);
+
+  if (torrent->sh.pieces_state[index] != PIECE_STATE_HAVE) {
+    torrent->sh.pieces_state[index] = PIECE_STATE_HAVE;
+    torrent->sh.pieces_left--;
+
+    assert(torrent->sh.pieces_left < torrent->pieces.size());
+
+    if (0 == torrent->sh.pieces_left) {
+      torrent->sh.completed = true;
+      completed = true;
+    }
+  }
+  pieces_left = torrent->sh.pieces_left;
+
+  pthread_mutex_unlock(&torrent->sh_mutex);
+
+  std::cout << "pieces left: " << pieces_left << std::endl;
+
+  if (completed) {
+    torrent_complete(torrent);
+  }
+
+  peer_msg2 have_msg;
+  have_msg.type = MSG_HAVE;
+  have_msg.payload.have = index;
+  peer_msg_send(sockfd, torrent, &have_msg);
+}
+
 void process_piece_msg(int sockfd, const piece_msg *msg,
                        torrent_info2 *torrent, conn_state *state)
 {
   std::cout << "enter process_piece_msg" << std::endl;
+
+  typedef std::list<piece_request *>::iterator piece_req_it;
+  typedef std::list<block_request *>::iterator block_req_it;
+
+  for (piece_req_it piece_it = state->local_requests.begin();
+       piece_it != state->local_requests.end();
+       ++piece_it) {
+    if ((*piece_it)->piece_index == msg->index) {
+      for (block_req_it block_it = (*piece_it)->block_requests.begin();
+           block_it != (*piece_it)->block_requests.end();
+           ++block_it) {
+        if ((*block_it)->len == msg->block_len &&
+            (*block_it)->begin == msg->begin) {
+          (*block_it)->completed = true;
+          (*piece_it)->blocks_left--;
+          break;
+        }
+      }
+
+      if ((*piece_it)->blocks_left == 0) {
+        // got the entire piece
+        std::cout << "got a piece fam" << std::endl;
+
+        bool valid = torrent_sha1_verify(torrent, (*piece_it)->piece_index);
+        if (!valid) {
+          std::cout << "piece download does not have an expected SHA1 hash"
+                    << std::endl;
+          pthread_mutex_lock(&torrent->sh_mutex);
+          torrent->sh.pieces_state[(*piece_it)->piece_index] =
+            PIECE_STATE_NOT_REQUESTED;
+          pthread_mutex_unlock(&torrent->sh_mutex);
+        }
+        else {
+          std::cout << "successfully downloaded a piece: "
+                    << (*piece_it)->piece_index << std::endl;
+          handle_piece_dnld_completion(sockfd,
+                                       torrent,
+                                       (*piece_it)->piece_index
+                                       );
+        }
+
+        state->local_requests.remove(*piece_it);
+      }
+    }
+  }
 }
 
 void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
