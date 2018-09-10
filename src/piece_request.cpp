@@ -23,6 +23,7 @@ void skip_until_index(const torrent_info2 *torrent, unsigned index,
     }
     else {
       skip -= mem.size;
+      files_vec_index++;
     }
   }
 }
@@ -31,9 +32,11 @@ block_request *next_block_request(const torrent_info2 *torrent,
                                   off_t *offset,
                                   size_t *left,
                                   size_t piece_len,
-                                  unsigned files_vec_index)
+                                  unsigned &files_vec_index)
 {
-  if (0 == *left) {
+  // need to check files_vec_index here, otherwise it will lead
+  // to an infinite loop
+  if (0 == *left || files_vec_index >= torrent->files.size()) {
     return NULL;
   }
 
@@ -54,23 +57,24 @@ block_request *next_block_request(const torrent_info2 *torrent,
     dnld_file *file = torrent->files[i];
     assert(file);
 
-    file_mem mem;
-    dnld_file_get_file_mem(file, &mem);
+    file_mem *mem = new file_mem; // TODO: delete
+    dnld_file_get_file_mem(file, mem);
 
-    mem.mem = ((char *)mem.mem + *offset);
-    mem.size -= *offset;
+    mem->mem = ((char *)mem->mem + *offset);
+    mem->size -= *offset;
 
-    if (mem.size > PEER_REQUEST_SIZE - curr_size) {
-      mem.size = PEER_REQUEST_SIZE - curr_size;
-      *offset += mem.size;
+    if (mem->size > PEER_REQUEST_SIZE - curr_size) {
+      mem->size = PEER_REQUEST_SIZE - curr_size;
+      *offset += mem->size;
     }
     else {
       *offset = 0;
+      files_vec_index++; // fix infinite loop
     }
 
-    *left -= mem.size;
+    *left -= mem->size;
     ret->file_mems.push_back(mem);
-    curr_size += mem.size;
+    curr_size += mem->size;
   }
 
   ret->len = curr_size;

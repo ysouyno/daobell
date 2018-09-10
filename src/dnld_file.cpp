@@ -75,7 +75,7 @@ int dnld_file_complete(dnld_file *file)
 {
   std::string old_path = file->path;
 
-  size_t pos = file->path.find_last_of(".incomplete");
+  size_t pos = file->path.find(".incomplete");
   if (std::string::npos != pos) {
     file->path = file->path.substr(0, pos);
     std::cout << "new path: " << file->path << std::endl;

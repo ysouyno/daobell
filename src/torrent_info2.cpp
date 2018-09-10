@@ -64,7 +64,7 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
       torrent->files.push_back(file);
 
       // TODO: don't forget close and free somewhere
-      dnld_file_close_and_free(file);
+      // dnld_file_close_and_free(file); // fix recv: Bad address
     }
   }
 
@@ -142,7 +142,7 @@ int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir
       torrent->files.push_back(file);
 
       // TODO: don't forget close and free somewhere
-      dnld_file_close_and_free(file);
+      // dnld_file_close_and_free(file); // fix recv: Bad address
     }
     else {
       ret = -1;

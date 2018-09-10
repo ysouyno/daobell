@@ -339,7 +339,7 @@ void process_piece_msg(int sockfd, const piece_msg *msg,
                                        );
         }
 
-        state->local_requests.remove(*piece_it);
+        state->local_requests.remove(*piece_it++); // fix segmentation fault
       }
     }
   }
@@ -384,8 +384,9 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
   }
   case MSG_BITFIELD: {
     std::cout << "conn_state.peer_have: " << state->peer_have << std::endl;
-    assert(msg->payload.bitfield.num_blocks() ==
-           BITFIELD_NUM_BYTES(state->bitlen));
+    /*assert(msg->payload.bitfield.num_blocks() ==
+      BITFIELD_NUM_BYTES(state->bitlen));*/
+    std::cout << "state->bitlen: " << state->bitlen << std::endl;
     for (unsigned i = 0; i < state->peer_have.size(); ++i) {
       state->peer_have[i] = msg->payload.bitfield[i];
     }
@@ -476,19 +477,18 @@ int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
 
     std::cout << "sending request for piece " << req_index << std::endl;
 
-    std::shared_ptr<piece_request> sp_request =
-      std::make_shared<piece_request>();
-    piece_request_create(torrent, req_index, sp_request.get());
-    state->local_requests.push_back(sp_request.get());
+    piece_request *request = new piece_request; // TODO: need delete
+    piece_request_create(torrent, req_index, request);
+    state->local_requests.push_back(request);
 
     typedef std::list<block_request *>::iterator block_request_it;
 
-    for (block_request_it it = sp_request->block_requests.begin();
-         it != sp_request->block_requests.end();
+    for (block_request_it it = request->block_requests.begin();
+         it != request->block_requests.end();
          ++it) {
       peer_msg2 req_msg;
       req_msg.type = MSG_REQUEST;
-      req_msg.payload.request.index = sp_request->piece_index;
+      req_msg.payload.request.index = request->piece_index;
       req_msg.payload.request.begin = (*it)->begin;
       req_msg.payload.request.length = (*it)->len;
 
@@ -572,8 +572,7 @@ static void *peer_connection(void *arg)
 
   unchoke(sockfd, torrent, state.get());
 
-  int i = 0;
-  while (true && i++ < 100) {
+  while (true) {
     std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     usleep(250 * 1000);

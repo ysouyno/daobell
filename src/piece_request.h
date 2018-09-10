@@ -7,7 +7,7 @@
 
 struct block_request
 {
-  std::list<file_mem> file_mems;
+  std::list<file_mem *> file_mems;
   off_t begin;
   size_t len;
   bool completed;

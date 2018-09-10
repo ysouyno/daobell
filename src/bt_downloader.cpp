@@ -82,8 +82,7 @@ static void *periodic_announce(void *arg)
   pthread_mutex_unlock(&targ->torrent->sh_mutex);
 
   bool started = false;
-  int i = 0;
-  while (true && i++ < 1) {
+  while (true) {
     std::cout << "periodic_announce while (i++ < 1) start" << std::endl;
     std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
 
@@ -124,7 +123,7 @@ static void *periodic_announce(void *arg)
                 << " seconds" << std::endl;
     }
 
-    // sleep(interval);
+    sleep(interval);
   }
 
   return NULL;
