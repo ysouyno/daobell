@@ -4,10 +4,7 @@
 void skip_until_index(const torrent_info2 *torrent, unsigned index,
                       off_t *offset, unsigned &files_vec_index)
 {
-  std::cout << "enter skip_until_index" << std::endl;
-
   size_t skip = torrent->piece_length * index;
-  std::cout << "skip: " << skip << std::endl;
 
   for (unsigned i = 0; i < torrent->files.size() && skip > 0; ++i) {
     assert(torrent->files[i]);
@@ -84,13 +81,9 @@ block_request *next_block_request(const torrent_info2 *torrent,
 int piece_request_create(const torrent_info2 *torrent, unsigned index,
                          piece_request *out)
 {
-  std::cout << "enter piece_request_create" << std::endl;
-
   off_t offset = 0;
   unsigned files_vec_index = 0;
   skip_until_index(torrent, index, &offset, files_vec_index);
-  std::cout << "offset: " << offset << std::endl;
-  std::cout << "files_vec_index: " << files_vec_index << std::endl;
 
   out->piece_index = index;
 
@@ -113,8 +106,6 @@ int piece_request_create(const torrent_info2 *torrent, unsigned index,
 block_request *piece_request_block_at(const piece_request *request,
                                       off_t offset)
 {
-  std::cout << "enter piece_request_block_at" << std::endl;
-
   typedef std::list<block_request *>::const_iterator block_request_it;
 
   for (block_request_it it = request->block_requests.begin();

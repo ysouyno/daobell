@@ -83,7 +83,6 @@ static void *periodic_announce(void *arg)
 
   bool started = false;
   while (true) {
-    std::cout << "periodic_announce while (i++ < 1) start" << std::endl;
     std::shared_ptr<tracker_announce_req> req = create_tracker_request(targ);
 
     if (!started) {

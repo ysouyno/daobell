@@ -297,8 +297,6 @@ void handle_piece_dnld_completion(int sockfd, torrent_info2 *torrent,
 void process_piece_msg(int sockfd, const piece_msg *msg,
                        torrent_info2 *torrent, conn_state *state)
 {
-  std::cout << "enter process_piece_msg" << std::endl;
-
   typedef std::list<piece_request *>::iterator piece_req_it;
   typedef std::list<block_request *>::iterator block_req_it;
 
@@ -386,7 +384,6 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
     std::cout << "conn_state.peer_have: " << state->peer_have << std::endl;
     /*assert(msg->payload.bitfield.num_blocks() ==
       BITFIELD_NUM_BYTES(state->bitlen));*/
-    std::cout << "state->bitlen: " << state->bitlen << std::endl;
     for (unsigned i = 0; i < state->peer_have.size(); ++i) {
       state->peer_have[i] = msg->payload.bitfield[i];
     }
@@ -530,7 +527,6 @@ static void *peer_connection(void *arg)
   }
 
   if (sockfd < 0) {
-    std::cout << "sockfd is invalid" << std::endl;
     pthread_exit(NULL);
   }
 

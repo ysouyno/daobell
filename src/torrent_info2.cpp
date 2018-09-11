@@ -223,7 +223,6 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 int torrent_make_bitfield(const torrent_info2 *torrent,
                           boost::dynamic_bitset<> *out)
 {
-  std::cout << "enter torrent_make_bitfield" << std::endl;
   assert(torrent);
 
   unsigned num_pieces = torrent->pieces.size();
