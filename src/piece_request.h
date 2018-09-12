@@ -7,7 +7,7 @@
 
 struct block_request
 {
-  std::list<file_mem *> file_mems;
+  std::list<std::shared_ptr<file_mem> > file_mems;
   off_t begin;
   size_t len;
   bool completed;
@@ -16,7 +16,7 @@ struct block_request
 struct piece_request
 {
   unsigned piece_index;
-  std::list<block_request *> block_requests;
+  std::list<std::shared_ptr<block_request> > block_requests;
   unsigned blocks_left;
 };
 

@@ -30,8 +30,8 @@ struct conn_state
   size_t bitlen;
   unsigned blocks_sent;
   unsigned blocks_recvd;
-  std::queue<request_msg> peer_requests;  // requests from peer
-  std::list<piece_request *> local_requests; // requests from piece
+  std::queue<request_msg> peer_requests;
+  std::list<std::shared_ptr<piece_request> > local_requests;
 };
 
 void get_peer_ip(const peer_info *peer, char *out_str, size_t out_len)
@@ -297,18 +297,22 @@ void handle_piece_dnld_completion(int sockfd, torrent_info2 *torrent,
 void process_piece_msg(int sockfd, const piece_msg *msg,
                        torrent_info2 *torrent, conn_state *state)
 {
-  typedef std::list<piece_request *>::iterator piece_req_it;
-  typedef std::list<block_request *>::iterator block_req_it;
+  typedef std::list<std::shared_ptr<piece_request> > piece_req_list;
+  typedef std::list<std::shared_ptr<block_request> > block_req_list;
 
-  for (piece_req_it piece_it = state->local_requests.begin();
+  for (piece_req_list::iterator piece_it = state->local_requests.begin();
        piece_it != state->local_requests.end();
-       ++piece_it) {
+       ++piece_it
+       ) {
     if ((*piece_it)->piece_index == msg->index) {
-      for (block_req_it block_it = (*piece_it)->block_requests.begin();
+      for (block_req_list::iterator block_it =
+             (*piece_it)->block_requests.begin();
            block_it != (*piece_it)->block_requests.end();
-           ++block_it) {
+           ++block_it
+           ) {
         if ((*block_it)->len == msg->block_len &&
-            (*block_it)->begin == msg->begin) {
+            (*block_it)->begin == msg->begin
+            ) {
           (*block_it)->completed = true;
           (*piece_it)->blocks_left--;
           break;
@@ -474,18 +478,20 @@ int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
 
     std::cout << "sending request for piece " << req_index << std::endl;
 
-    piece_request *request = new piece_request; // TODO: need delete
-    piece_request_create(torrent, req_index, request);
-    state->local_requests.push_back(request);
+    std::shared_ptr<piece_request> sp_request =
+      std::make_shared<piece_request>();
+    piece_request_create(torrent, req_index, sp_request.get());
+    state->local_requests.push_back(sp_request);
 
-    typedef std::list<block_request *>::iterator block_request_it;
+    typedef std::list<std::shared_ptr<block_request> > block_req_list;
 
-    for (block_request_it it = request->block_requests.begin();
-         it != request->block_requests.end();
-         ++it) {
+    for (block_req_list::iterator it = sp_request->block_requests.begin();
+         it != sp_request->block_requests.end();
+         ++it
+         ) {
       peer_msg2 req_msg;
       req_msg.type = MSG_REQUEST;
-      req_msg.payload.request.index = request->piece_index;
+      req_msg.payload.request.index = sp_request->piece_index;
       req_msg.payload.request.begin = (*it)->begin;
       req_msg.payload.request.length = (*it)->len;
 
@@ -570,6 +576,7 @@ static void *peer_connection(void *arg)
 
   while (true) {
     std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     usleep(250 * 1000);
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -592,6 +599,11 @@ static void *peer_connection(void *arg)
         }
       }
     }
+
+    if (torrent->sh.completed) {
+      break;
+    }
+
     std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
   }
 

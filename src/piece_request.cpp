@@ -25,11 +25,11 @@ void skip_until_index(const torrent_info2 *torrent, unsigned index,
   }
 }
 
-block_request *next_block_request(const torrent_info2 *torrent,
-                                  off_t *offset,
-                                  size_t *left,
-                                  size_t piece_len,
-                                  unsigned &files_vec_index)
+std::shared_ptr<block_request> next_block_request(const torrent_info2 *torrent,
+                                                  off_t *offset,
+                                                  size_t *left,
+                                                  size_t piece_len,
+                                                  unsigned &files_vec_index)
 {
   // need to check files_vec_index here, otherwise it will lead
   // to an infinite loop
@@ -37,7 +37,7 @@ block_request *next_block_request(const torrent_info2 *torrent,
     return NULL;
   }
 
-  block_request *ret = new block_request;
+  std::shared_ptr<block_request> ret = std::make_shared<block_request>();
   if (!ret) {
     return NULL;
   }
@@ -54,8 +54,8 @@ block_request *next_block_request(const torrent_info2 *torrent,
     dnld_file *file = torrent->files[i];
     assert(file);
 
-    file_mem *mem = new file_mem; // TODO: delete
-    dnld_file_get_file_mem(file, mem);
+    std::shared_ptr<file_mem> mem = std::make_shared<file_mem>();
+    dnld_file_get_file_mem(file, mem.get());
 
     mem->mem = ((char *)mem->mem + *offset);
     mem->size -= *offset;
@@ -87,7 +87,7 @@ int piece_request_create(const torrent_info2 *torrent, unsigned index,
 
   out->piece_index = index;
 
-  block_request *block = NULL;
+  std::shared_ptr<block_request> block = NULL;
   size_t left = torrent->piece_length;
 
   while ((block = next_block_request(torrent,
@@ -106,13 +106,13 @@ int piece_request_create(const torrent_info2 *torrent, unsigned index,
 block_request *piece_request_block_at(const piece_request *request,
                                       off_t offset)
 {
-  typedef std::list<block_request *>::const_iterator block_request_it;
+  typedef std::list<std::shared_ptr<block_request> > block_req_list;
 
-  for (block_request_it it = request->block_requests.begin();
+  for (block_req_list::const_iterator it = request->block_requests.begin();
        it != request->block_requests.end();
        ++it) {
     if ((*it)->begin == offset) {
-      return (*it);
+      return (*it).get();
     }
   }
 

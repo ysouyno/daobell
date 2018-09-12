@@ -81,6 +81,8 @@ int dnld_file_complete(dnld_file *file)
     std::cout << "new path: " << file->path << std::endl;
 
     rename(old_path.c_str(), file->path.c_str());
+
+    dnld_file_close_and_free(file);
   }
 
   return 0;

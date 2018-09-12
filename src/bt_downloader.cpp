@@ -122,6 +122,10 @@ static void *periodic_announce(void *arg)
                 << " seconds" << std::endl;
     }
 
+    if (targ->torrent->sh.completed) {
+      break;
+    }
+
     sleep(interval);
   }
 

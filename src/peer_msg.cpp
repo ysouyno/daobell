@@ -539,8 +539,8 @@ int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
   size_t written = 0;
   off_t offset = 0;
 
-  typedef std::list<block_request *> block_req_list;
-  typedef std::list<file_mem *> file_mem_list;
+  typedef std::list<std::shared_ptr<block_request> > block_req_list;
+  typedef std::list<std::shared_ptr<file_mem> > file_mem_list;
 
   for (block_req_list::iterator block_it = sp_piece_req->block_requests.begin();
        block_it != sp_piece_req->block_requests.end();
@@ -608,7 +608,9 @@ int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
     piece_request_block_at(sp_request.get(), out->payload.piece.begin);
   assert(block_req);
 
-  for (std::list<file_mem *>::iterator it = block_req->file_mems.begin();
+  typedef std::list<std::shared_ptr<file_mem> > file_mem_list;
+
+  for (file_mem_list::iterator it = block_req->file_mems.begin();
        it != block_req->file_mems.end();
        ++it) {
     std::cout << "writing " << (*it)->size << " bytes to "
