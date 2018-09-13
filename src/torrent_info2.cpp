@@ -1,4 +1,6 @@
 #include "torrent_info2.h"
+#include "piece_request.h"
+#include "sha1.h"
 #include <iostream>
 #include <assert.h>
 #include <string.h>
@@ -284,9 +286,35 @@ int torrent_next_request(torrent_info2 *torrent,
 
 bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index)
 {
-  std::cout << "enter torrent_sha1_verify" << std::endl;
+  assert(index < torrent->pieces.size());
 
-  return true;
+  std::shared_ptr<piece_request> piece_req = std::make_shared<piece_request>();
+  piece_request_create(torrent, index, piece_req.get());
+  assert(piece_req);
+
+  sha1_context *context = sha1_context_init();
+
+  typedef std::list<std::shared_ptr<block_request> > block_req_list;
+  typedef std::list<std::shared_ptr<file_mem> > file_mem_list;
+
+  for (block_req_list::iterator piece_it = piece_req->block_requests.begin();
+       piece_it != piece_req->block_requests.end();
+       ++piece_it
+       ) {
+    for (file_mem_list::iterator file_it = (*piece_it)->file_mems.begin();
+         file_it != (*piece_it)->file_mems.end();
+         ++file_it
+         ) {
+      sha1_update(context, (const unsigned char *)(*file_it)->mem,
+                  (*file_it)->size);
+    }
+  }
+
+  unsigned char sha1_digest[DIGEST_LEN] = {0};
+  sha1_finish(context, sha1_digest);
+  sha1_context_free(context);
+
+  return (0 == memcmp(torrent->pieces[index].c_str(), sha1_digest, DIGEST_LEN));
 }
 
 int torrent_complete(torrent_info2 *torrent)
