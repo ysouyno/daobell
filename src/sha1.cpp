@@ -1,142 +1,279 @@
+/* SHA-1 in C
+ * By Steve Reid <steve@edmweb.com>
+ * 100% Public Domain
+ */
+
+/* LITTLE_ENDIAN
+ * This should be #define'd already, if true.
+ */
+
+/* SHA1HANDSOFF
+ * Copies data before messing with it.
+ */
+
 #include "sha1.h"
+#include <string.h>
 
-#define CIRCULAR_SHIFT_32(X, n) (htobe32((be32toh(X) << (n)) | (be32toh(X) >> (32 - (n)))))
-#define ADD_32(a, b) (htobe32(be32toh(a) + be32toh(b)))
+#define SHA1HANDSOFF
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define rol(value, bits)                              \
+  (((value) << (bits)) | ((value) >> (32 - (bits))))
 
-static uint32_t f(int t, uint32_t b, uint32_t c, uint32_t d)
+/* blk0() and blk() perform the initial expand.
+ * I got the idea of expanding during the round function from SSLeay
+ */
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define blk0(i) (block->l[i] = (rol(block->l[i], 24) & 0xFF00FF00)  \
+                 | (rol(block->l[i], 8) & 0x00FF00FF))
+#elif BYTE_ORDER == BIG_ENDIAN
+#define blk0(i) block->l[i]
+#else
+#error "Endianness not defined!"
+#endif
+
+#define blk(i) (block->l[i & 15] =                                    \
+                rol(block->l[(i + 13) & 15] ^ block->l[(i + 8) & 15]  \
+                    ^ block->l[(i + 2) & 15] ^ block->l[i & 15], 1))
+
+/* (R0 + R1), R2, R3, R4 are the different operations used in SHA1
+ */
+#define R0(v, w, x, y, z, i)                                    \
+  z += ((w & (x ^ y)) ^ y) + blk0(i) + 0x5A827999 + rol(v, 5);  \
+  w = rol(w, 30);
+#define R1(v, w, x, y, z, i)                                \
+  z += ((w & (x^y)) ^ y) + blk(i) + 0x5A827999 + rol(v, 5); \
+  w = rol(w, 30);
+#define R2(v, w, x, y, z, i)                          \
+  z += (w ^ x ^ y) + blk(i) + 0x6ED9EBA1 + rol(v, 5); \
+  w = rol(w, 30);
+#define R3(v, w, x, y, z, i)                                        \
+  z += (((w | x) & y) | (w & x)) + blk(i) + 0x8F1BBCDC + rol(v, 5); \
+  w = rol(w, 30);
+#define R4(v, w, x, y, z, i)                          \
+  z += (w ^ x ^ y) + blk(i) + 0xCA62C1D6 + rol(v, 5); \
+  w = rol(w, 30);
+
+/* Hash a single 512-bit block. This is the core of the algorithm.
+ */
+
+void sha1_transform(uint32_t state[5], const unsigned char buffer[64])
 {
-  if (0 <= t && t <= 19) {
-    return ((b & c) | ((~b) & d));
-  }
-  else if (20 <= t && t <= 39) {
-    return (b ^ c ^ d);
-  }
-  else if (40 <= t && t <= 59) {
-    return ((b & c) | (b & d) | (c & d));
-  }
-  else if (60 <= t && t <= 79) {
-    return (b ^ c ^ d);
-  }
+  uint32_t a, b, c, d, e;
 
-  // warning: control reaches end of non-void function [-Wreturn-type]
-  return 0;
+  typedef union {
+    unsigned char c[64];
+    uint32_t l[16];
+  } CHAR64LONG16;
+
+#ifdef SHA1HANDSOFF
+  CHAR64LONG16 block[1]; /* use array to appear as a pointer */
+
+  memcpy(block, buffer, 64);
+#else
+  /* The following had better never be used because it causes the
+   * pointer-to-const buffer to be cast into a pointer to non-const.
+   * And the result is written through. I threw a "const" in, hoping
+   * this will cause a diagnostic.
+   */
+  CHAR64LONG16 *block = (const CHAR64LONG16 *)buffer;
+#endif
+  /* Copy context->state[] to working vars */
+  a = state[0];
+  b = state[1];
+  c = state[2];
+  d = state[3];
+  e = state[4];
+  /* 4 rounds of 20 operations each. Loop unrolled. */
+  R0(a, b, c, d, e, 0);
+  R0(e, a, b, c, d, 1);
+  R0(d, e, a, b, c, 2);
+  R0(c, d, e, a, b, 3);
+  R0(b, c, d, e, a, 4);
+  R0(a, b, c, d, e, 5);
+  R0(e, a, b, c, d, 6);
+  R0(d, e, a, b, c, 7);
+  R0(c, d, e, a, b, 8);
+  R0(b, c, d, e, a, 9);
+  R0(a, b, c, d, e, 10);
+  R0(e, a, b, c, d, 11);
+  R0(d, e, a, b, c, 12);
+  R0(c, d, e, a, b, 13);
+  R0(b, c, d, e, a, 14);
+  R0(a, b, c, d, e, 15);
+  R1(e, a, b, c, d, 16);
+  R1(d, e, a, b, c, 17);
+  R1(c, d, e, a, b, 18);
+  R1(b, c, d, e, a, 19);
+  R2(a, b, c, d, e, 20);
+  R2(e, a, b, c, d, 21);
+  R2(d, e, a, b, c, 22);
+  R2(c, d, e, a, b, 23);
+  R2(b, c, d, e, a, 24);
+  R2(a, b, c, d, e, 25);
+  R2(e, a, b, c, d, 26);
+  R2(d, e, a, b, c, 27);
+  R2(c, d, e, a, b, 28);
+  R2(b, c, d, e, a, 29);
+  R2(a, b, c, d, e, 30);
+  R2(e, a, b, c, d, 31);
+  R2(d, e, a, b, c, 32);
+  R2(c, d, e, a, b, 33);
+  R2(b, c, d, e, a, 34);
+  R2(a, b, c, d, e, 35);
+  R2(e, a, b, c, d, 36);
+  R2(d, e, a, b, c, 37);
+  R2(c, d, e, a, b, 38);
+  R2(b, c, d, e, a, 39);
+  R3(a, b, c, d, e, 40);
+  R3(e, a, b, c, d, 41);
+  R3(d, e, a, b, c, 42);
+  R3(c, d, e, a, b, 43);
+  R3(b, c, d, e, a, 44);
+  R3(a, b, c, d, e, 45);
+  R3(e, a, b, c, d, 46);
+  R3(d, e, a, b, c, 47);
+  R3(c, d, e, a, b, 48);
+  R3(b, c, d, e, a, 49);
+  R3(a, b, c, d, e, 50);
+  R3(e, a, b, c, d, 51);
+  R3(d, e, a, b, c, 52);
+  R3(c, d, e, a, b, 53);
+  R3(b, c, d, e, a, 54);
+  R3(a, b, c, d, e, 55);
+  R3(e, a, b, c, d, 56);
+  R3(d, e, a, b, c, 57);
+  R3(c, d, e, a, b, 58);
+  R3(b, c, d, e, a, 59);
+  R4(a, b, c, d, e, 60);
+  R4(e, a, b, c, d, 61);
+  R4(d, e, a, b, c, 62);
+  R4(c, d, e, a, b, 63);
+  R4(b, c, d, e, a, 64);
+  R4(a, b, c, d, e, 65);
+  R4(e, a, b, c, d, 66);
+  R4(d, e, a, b, c, 67);
+  R4(c, d, e, a, b, 68);
+  R4(b, c, d, e, a, 69);
+  R4(a, b, c, d, e, 70);
+  R4(e, a, b, c, d, 71);
+  R4(d, e, a, b, c, 72);
+  R4(c, d, e, a, b, 73);
+  R4(b, c, d, e, a, 74);
+  R4(a, b, c, d, e, 75);
+  R4(e, a, b, c, d, 76);
+  R4(d, e, a, b, c, 77);
+  R4(c, d, e, a, b, 78);
+  R4(b, c, d, e, a, 79);
+  /* Add the working vars back into context.state[] */
+  state[0] += a;
+  state[1] += b;
+  state[2] += c;
+  state[3] += d;
+  state[4] += e;
+  /* Wipe variables */
+  a = b = c = d = e = 0;
+#ifdef SHA1HANDSOFF
+  memset(block, '\0', sizeof(block));
+#endif
 }
 
-static uint32_t K(int t)
-{
-  if (0 <= t && t <= 19) {
-    return htobe32(0x5A827999);
-  }
-  else if (20 <= t && t <= 39) {
-    return htobe32(0x6ED9EBA1);
-  }
-  else if (40 <= t && t <= 59) {
-    return htobe32(0x8F1BBCDC);
-  }
-  else if (60 <= t && t <= 79) {
-    return htobe32(0xCA62C1D6);
-  }
+/* SHA1Init - Initialize new context */
 
-  // warning: control reaches end of non-void function [-Wreturn-type]
-  return 0;
+sha1_context *sha1_context_init()
+{
+  /* SHA1 initialization constants */
+  sha1_context *context = (sha1_context *)malloc(sizeof(sha1_context));
+  context->state[0] = 0x67452301;
+  context->state[1] = 0xEFCDAB89;
+  context->state[2] = 0x98BADCFE;
+  context->state[3] = 0x10325476;
+  context->state[4] = 0xC3D2E1F0;
+  context->count[0] = context->count[1] = 0;
+
+  return context;
 }
 
-static void pad_msg_block(char *out, size_t to_pad, size_t len)
+/* Run your data through this. */
+
+void sha1_update(sha1_context *context, const unsigned char *data,
+                 uint32_t len)
 {
-  size_t footer_len = 1 + sizeof(uint64_t);
+  uint32_t i;
+  uint32_t j;
 
-  if (footer_len >= to_pad) {
-    memset(out + 64, 0, to_pad);
-  }
-  else {
-    unsigned to_zero = to_pad - footer_len;
-    memset(out + 64 - to_pad, 0x80, 1);
-    memset(out + 64 - to_pad + 1, 0, to_zero);
-
-    uint64_t len64 = htobe64(len * 8);
-    memcpy(out + 64 - to_pad + to_zero + 1, &len64, sizeof(uint64_t));
-  }
-}
-
-static unsigned num_msg_blocks(size_t len)
-{
-  return (len / 64) + (64 - (len % 64) >= 1 + sizeof(uint64_t) ? 1 : 2);
-}
-
-static int block_at_index(const char *msg, size_t len, int i, char out_block[64])
-{
-  unsigned left = MAX(len - 64 * i, 0);
-  const char *next = msg + i * 64;
-
-  if (left < 64) {
-    memcpy(out_block, next, left);
-    pad_msg_block(out_block, 64 - left, len);
-  }
-  else {
-    memcpy(out_block, next, 64);
-  }
-
-  return 0;
-}
-
-int sha1_compute(const char *msg, size_t len, char out_digest[DIGEST_LEN])
-{
-  uint32_t A, B, C, D, E;
-
-  union {
-    unsigned char bytes[DIGEST_LEN];
-    uint32_t H[5];
-  } digest;
-
-  uint32_t W[80];
-
-  digest.H[0] = htobe32(0x67452301);
-  digest.H[1] = htobe32(0xEFCDAB89);
-  digest.H[2] = htobe32(0x98BADCFE);
-  digest.H[3] = htobe32(0x10325476);
-  digest.H[4] = htobe32(0xC3D2E1F0);
-
-  uint32_t msg_block[16];
-
-  for (unsigned i = 0; i < num_msg_blocks(len); i++) {
-    block_at_index(msg, len, i, (char*)msg_block);
-
-    for (int t = 0; t <= 15; t++) {
-      W[t] = msg_block[t];
+  j = context->count[0];
+  if ((context->count[0] += len << 3) < j)
+    context->count[1]++;
+  context->count[1] += (len >> 29);
+  j = (j >> 3) & 63;
+  if ((j + len) > 63) {
+    memcpy(&context->buffer[j], data, (i = 64 - j));
+    sha1_transform(context->state, context->buffer);
+    for (; i + 63 < len; i += 64) {
+      sha1_transform(context->state, &data[i]);
     }
-
-    for (int t = 16; t <= 79; t++) {
-      W[t] = CIRCULAR_SHIFT_32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
-    }
-
-    A = digest.H[0];
-    B = digest.H[1];
-    C = digest.H[2];
-    D = digest.H[3];
-    E = digest.H[4];
-
-    for (int t = 0; t <= 79; t++) {
-      uint32_t temp =
-        ADD_32(ADD_32(ADD_32(ADD_32(CIRCULAR_SHIFT_32(A, 5), f(t, B, C, D)), E), W[t]), K(t));
-
-      E = D;
-      D = C;
-      C = CIRCULAR_SHIFT_32(B, 30);
-      B = A;
-      A = temp;
-    }
-
-    digest.H[0] = ADD_32(digest.H[0], A);
-    digest.H[1] = ADD_32(digest.H[1], B);
-    digest.H[2] = ADD_32(digest.H[2], C);
-    digest.H[3] = ADD_32(digest.H[3], D);
-    digest.H[4] = ADD_32(digest.H[4], E);
+    j = 0;
   }
+  else
+    i = 0;
+  memcpy(&context->buffer[j], &data[i], len - i);
+}
 
-  memcpy(out_digest, digest.bytes, DIGEST_LEN);
+/* Add padding and return the message digest. */
 
-  return 0;
+void sha1_finish(sha1_context *context, unsigned char digest[DIGEST_LEN])
+{
+  unsigned i;
+  unsigned char finalcount[8];
+  unsigned char c;
+
+#if 0 /* untested "improvement" by DHR */
+  /* Convert context->count to a sequence of bytes
+   * in finalcount.  Second element first, but
+   * big-endian order within element.
+   * But we do it all backwards.
+   */
+  unsigned char *fcp = &finalcount[8];
+  for (i = 0; i < 2; i++) {
+    uint32_t t = context->count[i];
+    int j;
+    for (j = 0; j < 4; t >>= 8, j++)
+      *--fcp = (unsigned char)t;
+  }
+#else
+  for (i = 0; i < 8; i++) {
+    /* Endian independent */
+    finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)] >>
+                                     ((3 - (i & 3)) * 8)) & 255);
+  }
+#endif
+  c = 0200;
+  sha1_update(context, &c, 1);
+  while ((context->count[0] & 504) != 448) {
+    c = 0000;
+    sha1_update(context, &c, 1);
+  }
+  sha1_update(context, finalcount, 8); /* Should cause a SHA1Transform() */
+  for (i = 0; i < 20; i++) {
+    digest[i] = (unsigned char)
+      ((context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
+  }
+  /* Wipe variables */
+  memset(context, '\0', sizeof(*context));
+  memset(&finalcount, '\0', sizeof(finalcount));
+}
+
+void sha1_compute(const char *str, int len, char hash_out[DIGEST_LEN])
+{
+  sha1_context *ctx = sha1_context_init();
+
+  for (int i = 0; i < len; ++i)
+    sha1_update(ctx, (const unsigned char*)str + i, 1);
+  sha1_finish(ctx, (unsigned char *)hash_out);
+  hash_out[20] = '\0';
+}
+
+void sha1_context_free(sha1_context *context)
+{
+  free(context);
 }

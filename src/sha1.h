@@ -1,15 +1,27 @@
 #ifndef SHA1_H
 #define SHA1_H
 
-// from the BitFiend (https://github.com/eduard-permyakov/BitFiend.git)
+/* SHA-1 in C
+ * By Steve Reid <steve@edmweb.com>
+ * 100% Public Domain
+ */
 
-#include <stdint.h>
-#include <endian.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
 #define DIGEST_LEN 20
 
-int sha1_compute(const char *msg, size_t len, char out_digest[DIGEST_LEN]);
+struct sha1_context {
+  uint32_t state[5];
+  uint32_t count[2];
+  unsigned char buffer[64];
+};
+
+sha1_context *sha1_context_init();
+void sha1_update(sha1_context *context, const unsigned char *data,
+                 uint32_t len);
+void sha1_finish(sha1_context *context, unsigned char digest[DIGEST_LEN]);
+void sha1_compute(const char *str, int len, char hash_out[DIGEST_LEN]);
+void sha1_context_free(sha1_context *context);
 
 #endif /* SHA1_H */

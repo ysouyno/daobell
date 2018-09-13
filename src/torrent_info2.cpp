@@ -1,6 +1,7 @@
 #include "torrent_info2.h"
 #include <iostream>
 #include <assert.h>
+#include <string.h>
 
 int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
 {

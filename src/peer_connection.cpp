@@ -10,6 +10,7 @@
 #include <mqueue.h>
 #include <boost/dynamic_bitset.hpp>
 #include <queue>
+#include <string.h>
 
 #define PEER_CONNECT_TIMEOUT_SEC 5
 #define PEER_NUM_OUTSTANDING_REQUESTS 1
