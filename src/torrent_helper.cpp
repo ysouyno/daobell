@@ -1,6 +1,6 @@
 #include "torrent_helper.h"
 
-void get_announce(torrent_info *ti, bencode_dictionary *root)
+void get_announce(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb_announce = root->get("announce-list");
   if (NULL != bvb_announce) {
@@ -28,12 +28,12 @@ void get_announce(torrent_info *ti, bencode_dictionary *root)
   }
 }
 
-long long get_piece_length(torrent_info *ti, bencode_dictionary *root)
+long long get_piece_length(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb = root->get("info");
   assert(bvb != NULL);
 
-  bencode_dictionary *info_dict = dynamic_cast<bencode_dictionary *>(bvb);
+  bencode_dict *info_dict = dynamic_cast<bencode_dict *>(bvb);
   assert(info_dict != NULL);
 
   bencode_integer *bi = dynamic_cast<bencode_integer *>(info_dict->get("piece length"));
@@ -44,7 +44,7 @@ long long get_piece_length(torrent_info *ti, bencode_dictionary *root)
   return bi->get_value();
 }
 
-long long get_creation_date(torrent_info *ti, bencode_dictionary *root)
+long long get_creation_date(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb = root->get("creation date");
   assert(bvb != NULL);
@@ -57,7 +57,7 @@ long long get_creation_date(torrent_info *ti, bencode_dictionary *root)
   return bi->get_value();
 }
 
-void get_info_hash(torrent_info *ti, bencode_dictionary *root)
+void get_info_hash(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb = root->get("info");
   assert(bvb != NULL);
@@ -77,18 +77,18 @@ void get_info_hash(torrent_info *ti, bencode_dictionary *root)
   }
 }
 
-void get_files_and_size(torrent_info *ti, bencode_dictionary *root)
+void get_files_and_size(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb_info = root->get("info");
   assert(bvb_info != NULL);
 
   ti->files_size_ = 0;
 
-  bencode_value_base *bvb_files = dynamic_cast<bencode_dictionary *>(bvb_info)->get("files");
+  bencode_value_base *bvb_files = dynamic_cast<bencode_dict *>(bvb_info)->get("files");
   if (bvb_files != NULL) {
     std::cout << "multi files mode" << std::endl;
 
-    bencode_value_base *bvb_name = dynamic_cast<bencode_dictionary *>(bvb_info)->get("name");
+    bencode_value_base *bvb_name = dynamic_cast<bencode_dict *>(bvb_info)->get("name");
     assert(bvb_name != NULL);
 
     bencode_string *root_dir = dynamic_cast<bencode_string *>(bvb_name);
@@ -98,7 +98,7 @@ void get_files_and_size(torrent_info *ti, bencode_dictionary *root)
     assert(files_list != NULL);
 
     for (auto &file : *files_list) {
-      bencode_dictionary *file_dict = dynamic_cast<bencode_dictionary *>(file.get());
+      bencode_dict *file_dict = dynamic_cast<bencode_dict *>(file.get());
       assert(file_dict != NULL);
 
       bencode_integer *length = dynamic_cast<bencode_integer *>(file_dict->get("length"));
@@ -129,14 +129,14 @@ void get_files_and_size(torrent_info *ti, bencode_dictionary *root)
   else {
     std::cout << "single file mode" << std::endl;
 
-    bencode_value_base *bvb_length = dynamic_cast<bencode_dictionary *>(bvb_info)->get("length");
+    bencode_value_base *bvb_length = dynamic_cast<bencode_dict *>(bvb_info)->get("length");
     assert(bvb_length != NULL);
 
     bencode_integer *length = dynamic_cast<bencode_integer *>(bvb_length);
 
     ti->files_size_ = length->get_value();
 
-    bencode_value_base *bvb_name = dynamic_cast<bencode_dictionary *>(bvb_info)->get("name");
+    bencode_value_base *bvb_name = dynamic_cast<bencode_dict *>(bvb_info)->get("name");
     assert(bvb_name != NULL);
 
     bencode_string *name = dynamic_cast<bencode_string *>(bvb_name);
@@ -146,7 +146,7 @@ void get_files_and_size(torrent_info *ti, bencode_dictionary *root)
   }
 }
 
-void get_peers(torrent_info *ti, bencode_dictionary *root)
+void get_peers(torrent_info *ti, bencode_dict *root)
 {
   bencode_value_base *bvb_peers = root->get("peers");
   assert(bvb_peers != NULL);

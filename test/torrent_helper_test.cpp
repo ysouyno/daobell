@@ -40,7 +40,7 @@ void torrent_helper_test::test_get_announce()
 {
   std::string announce = "http://bttracker.debian.org:6969/announce";
 
-  get_announce(sp_ti_.get(), dynamic_cast<bencode_dictionary *>(sp_bvb_.get()));
+  get_announce(sp_ti_.get(), dynamic_cast<bencode_dict *>(sp_bvb_.get()));
 
   CPPUNIT_ASSERT(sp_ti_->announce_list_.size() == 1);
   CPPUNIT_ASSERT(sp_ti_->announce_list_.at(0) == announce);
@@ -50,7 +50,7 @@ void torrent_helper_test::test_get_piece_length()
 {
   long long piece_length = 262144;
 
-  get_piece_length(sp_ti_.get(), dynamic_cast<bencode_dictionary *>(sp_bvb_.get()));
+  get_piece_length(sp_ti_.get(), dynamic_cast<bencode_dict *>(sp_bvb_.get()));
 
   CPPUNIT_ASSERT(sp_ti_->piece_length_ == piece_length);
 }
@@ -59,7 +59,7 @@ void torrent_helper_test::test_get_creation_date()
 {
   long long creation_date = 1520682848;
 
-  get_creation_date(sp_ti_.get(), dynamic_cast<bencode_dictionary *>(sp_bvb_.get()));
+  get_creation_date(sp_ti_.get(), dynamic_cast<bencode_dict *>(sp_bvb_.get()));
 
   CPPUNIT_ASSERT(sp_ti_->creation_date_ == creation_date);
 }
@@ -68,7 +68,7 @@ void torrent_helper_test::test_get_info_hash()
 {
   std::string info_hash = "7431A969B347E14BBA641B3517C024F7B40DFB7F";
 
-  get_info_hash(sp_ti_.get(), dynamic_cast<bencode_dictionary *>(sp_bvb_.get()));
+  get_info_hash(sp_ti_.get(), dynamic_cast<bencode_dict *>(sp_bvb_.get()));
 
   CPPUNIT_ASSERT(sp_ti_->info_hash_ == info_hash);
 }

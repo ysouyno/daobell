@@ -56,7 +56,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(std::ifstream &ifs)
     return std::shared_ptr<bencode_value_base>(bl);
   }
   case 'd': {
-    bencode_dictionary *bd = new bencode_dictionary();
+    bencode_dict *bd = new bencode_dict();
 
     while (ifs.peek() != 'e') {
       // key is a string always
@@ -124,7 +124,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const c
   }
   case 'd': {
     *end_p = p + 1;
-    bencode_dictionary *bd = new bencode_dictionary();
+    bencode_dict *bd = new bencode_dict();
 
     while (**end_p != 'e') {
       // key is a string always

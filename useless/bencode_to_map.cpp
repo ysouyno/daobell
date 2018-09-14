@@ -28,7 +28,7 @@ void bencode_to_map::crawl(bencode_list *p)
   }
 }
 
-void bencode_to_map::crawl(bencode_dictionary *p)
+void bencode_to_map::crawl(bencode_dict *p)
 {
   std::multimap<std::string, std::shared_ptr<bencode_value_base> > value = p->get_value();
 
@@ -37,7 +37,7 @@ void bencode_to_map::crawl(bencode_dictionary *p)
     std::string key = it->first;
     std::string value = "";
 
-    bencode_dictionary *bd = dynamic_cast<bencode_dictionary *>(it->second.get());
+    bencode_dict *bd = dynamic_cast<bencode_dict *>(it->second.get());
     bencode_list *bl = dynamic_cast<bencode_list *>(it->second.get());
 
     if (NULL == bd && NULL == bl) {

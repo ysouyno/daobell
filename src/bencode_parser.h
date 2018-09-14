@@ -6,7 +6,7 @@
 #include "bencode_string.h"
 #include "bencode_integer.h"
 #include "bencode_list.h"
-#include "bencode_dictionary.h"
+#include "bencode_dict.h"
 
 class bencode_parser
 {

@@ -108,7 +108,7 @@ int parse_tracker_response(torrent_info *ti, const std::string &response_peers)
   bencode_parser bp(response_peers.c_str());
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
 
-  get_peers(ti, dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  get_peers(ti, dynamic_cast<bencode_dict *>(sp_bvb.get()));
 
   // print all peers (format ip:port)
   if (!ti->peers_.empty()) {
@@ -374,10 +374,10 @@ void torrent_downloader::download_it(const std::string &torrent_file, const std:
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
 
   auto ti = std::make_shared<torrent_info>();
-  get_announce(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
-  get_info_hash(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  get_announce(ti.get(), dynamic_cast<bencode_dict *>(sp_bvb.get()));
+  get_info_hash(ti.get(), dynamic_cast<bencode_dict *>(sp_bvb.get()));
   get_peer_id(ti.get());
-  get_files_and_size(ti.get(), dynamic_cast<bencode_dictionary *>(sp_bvb.get()));
+  get_files_and_size(ti.get(), dynamic_cast<bencode_dict *>(sp_bvb.get()));
 
   pthread_t tid = 0;
   connect_tracker(&tid, ti.get());

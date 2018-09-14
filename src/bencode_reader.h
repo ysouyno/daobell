@@ -6,7 +6,7 @@
 #include <map>
 #include "bencode_value_base.h"
 #include "bencode_string.h"
-#include "bencode_dictionary.h"
+#include "bencode_dict.h"
 
 class bencode_reader
 {

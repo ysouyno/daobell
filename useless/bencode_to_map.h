@@ -9,7 +9,7 @@
 #include "bencode_string.h"
 #include "bencode_integer.h"
 #include "bencode_list.h"
-#include "bencode_dictionary.h"
+#include "bencode_dict.h"
 
 class bencode_to_map : public bencode_crawler
 {
@@ -22,7 +22,7 @@ public:
 
   virtual void crawl(bencode_list *p);
 
-  virtual void crawl(bencode_dictionary *p);
+  virtual void crawl(bencode_dict *p);
 
   const std::string &get_list_name() const;
 

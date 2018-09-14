@@ -1,15 +1,15 @@
-#ifndef BENCODE_DICTIONARY_H
-#define BENCODE_DICTIONARY_H
+#ifndef BENCODE_DICT_H
+#define BENCODE_DICT_H
 
+#include "bencode_value_base.h"
 #include <iostream>
 #include <memory>
 #include <map>
 #include <string>
-#include "bencode_value_base.h"
 
-class bencode_dictionary : public bencode_value_base
+class bencode_dict : public bencode_value_base
 {
-public:
+ public:
   void print_member();
 
   void crawl(bencode_crawler *p);
@@ -24,8 +24,8 @@ public:
 
   std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator end();
 
-private:
+ private:
   std::multimap<std::string, std::shared_ptr<bencode_value_base> > value_;
 };
 
-#endif /* BENCODE_DICTIONARY_H */
+#endif /* BENCODE_DICT_H */

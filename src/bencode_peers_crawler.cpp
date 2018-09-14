@@ -67,6 +67,6 @@ void bencode_peers_crawler::crawl(bencode_list *p)
 {
 }
 
-void bencode_peers_crawler::crawl(bencode_dictionary *p)
+void bencode_peers_crawler::crawl(bencode_dict *p)
 {
 }

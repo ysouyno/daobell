@@ -53,7 +53,7 @@ tracker_resp_parse(const std::string &resp_str)
   bencode_value_ptr meta = bp.get_value();
   assert(meta);
 
-  bencode_dictionary *dict = down_cast<bencode_dictionary>(meta.get());
+  bencode_dict *dict = down_cast<bencode_dict>(meta.get());
   assert(dict);
 
   std::shared_ptr<tracker_announce_resp> ret =

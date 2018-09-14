@@ -24,7 +24,7 @@ private:
   virtual void crawl(bencode_string *p);
   virtual void crawl(bencode_integer *p);
   virtual void crawl(bencode_list *p);
-  virtual void crawl(bencode_dictionary *p);
+  virtual void crawl(bencode_dict *p);
 
 private:
   torrent_info *ti_;

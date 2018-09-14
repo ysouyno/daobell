@@ -30,7 +30,7 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
   mkdir(path.c_str(), 0777);
 
   for (auto &f : *files) {
-    bencode_dictionary *value = down_cast<bencode_dictionary>(f.get());
+    bencode_dict *value = down_cast<bencode_dict>(f.get());
     std::string path = destdir;
     path += "/";
     path += name;
@@ -74,7 +74,7 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
   return ret;
 }
 
-int populate_info_from_dict(bencode_dictionary *info, const std::string &destdir,
+int populate_info_from_dict(bencode_dict *info, const std::string &destdir,
                             torrent_info2 *torrent)
 {
   int ret = 0;
@@ -160,7 +160,7 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   torrent_info2 *ret = new torrent_info2;
   // memset(ret, 0, sizeof(torrent_info2)); // fix segmentation fault
 
-  bencode_dictionary *dict = down_cast<bencode_dictionary>(meta.get());
+  bencode_dict *dict = down_cast<bencode_dict>(meta.get());
   dict_map dictmap = dict->get_value();
 
   for (dict_map::iterator it = dictmap.begin(); it != dictmap.end(); ++it) {
@@ -200,8 +200,8 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 
       memcpy(ret->info_hash, sha1_result, 20);
 
-      bencode_dictionary *value =
-        down_cast<bencode_dictionary>(it->second.get());
+      bencode_dict *value =
+        down_cast<bencode_dict>(it->second.get());
       if (value) {
         populate_info_from_dict(value, destdir, ret);
       }

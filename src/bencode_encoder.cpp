@@ -73,7 +73,7 @@ void bencode_encoder::crawl(bencode_list *p)
   encoded_str_ += 'e';
 }
 
-void bencode_encoder::crawl(bencode_dictionary *p)
+void bencode_encoder::crawl(bencode_dict *p)
 {
   encoded_str_ += 'd';
 

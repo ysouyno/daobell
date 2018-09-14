@@ -9,7 +9,7 @@
 #include "bencode_string.h"
 #include "bencode_integer.h"
 #include "bencode_list.h"
-#include "bencode_dictionary.h"
+#include "bencode_dict.h"
 
 class bencode_encoder : public bencode_crawler
 {
@@ -29,7 +29,7 @@ private:
   virtual void crawl(bencode_string *p);
   virtual void crawl(bencode_integer *p);
   virtual void crawl(bencode_list *p);
-  virtual void crawl(bencode_dictionary *p);
+  virtual void crawl(bencode_dict *p);
 
 private:
   std::string encoded_str_;
