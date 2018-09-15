@@ -63,7 +63,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(std::ifstream &ifs)
       std::shared_ptr<bencode_value_base> sp_bvb_key = parse(ifs);
       std::string key = dynamic_cast<bencode_string *>(sp_bvb_key.get())->get_value();
       std::shared_ptr<bencode_value_base> value = parse(ifs);
-      bd->insert_to_dictionary(key, value);
+      bd->insert_to_dict(key, value);
     }
 
     ifs.get();
@@ -134,7 +134,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const c
 
       p = *end_p;
       std::shared_ptr<bencode_value_base> value = parse(p, end_p);
-      bd->insert_to_dictionary(key, value);
+      bd->insert_to_dict(key, value);
     }
 
     (*end_p)++;

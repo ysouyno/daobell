@@ -2,7 +2,7 @@
 
 void bencode_dict::print_member()
 {
-  for (std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator it = value_.begin();
+  for (bencode_dict::value_type::iterator it = value_.begin();
        it != value_.end(); ++it) {
     std::cout << it->first << ": ";
     it->second.get()->print_member();
@@ -15,19 +15,20 @@ void bencode_dict::crawl(bencode_crawler *p)
   p->crawl(this);
 }
 
-void bencode_dict::insert_to_dictionary(std::string key, std::shared_ptr<bencode_value_base> value)
+void bencode_dict::insert_to_dict(std::string key,
+                                  std::shared_ptr<bencode_value_base> value)
 {
   value_.insert(std::make_pair(key, value));
 }
 
-const std::multimap<std::string, std::shared_ptr<bencode_value_base> > &bencode_dict::get_value() const
+const bencode_dict::value_type &bencode_dict::get_value() const
 {
   return value_;
 }
 
 bencode_value_base *bencode_dict::get(const std::string &key)
 {
-  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator it = value_.find(key);
+  bencode_dict::value_type::iterator it = value_.find(key);
   if (std::end(value_) == it) {
     return NULL;
   }
@@ -36,12 +37,12 @@ bencode_value_base *bencode_dict::get(const std::string &key)
   }
 }
 
-std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator bencode_dict::begin()
+bencode_dict::value_type::iterator bencode_dict::begin()
 {
   return value_.begin();
 }
 
-std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator bencode_dict::end()
+bencode_dict::value_type::iterator bencode_dict::end()
 {
   return value_.end();
 }

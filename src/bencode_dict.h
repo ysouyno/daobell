@@ -10,22 +10,26 @@
 class bencode_dict : public bencode_value_base
 {
  public:
+  typedef std::multimap<std::string, std::shared_ptr<bencode_value_base> >
+    value_type;
+
   void print_member();
 
   void crawl(bencode_crawler *p);
 
-  void insert_to_dictionary(std::string key, std::shared_ptr<bencode_value_base> value);
+  void insert_to_dict(std::string key,
+                      std::shared_ptr<bencode_value_base> value);
 
-  const std::multimap<std::string, std::shared_ptr<bencode_value_base> > &get_value() const;
+  const value_type &get_value() const;
 
   bencode_value_base *get(const std::string &key);
 
-  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator begin();
+  value_type::iterator begin();
 
-  std::multimap<std::string, std::shared_ptr<bencode_value_base> >::iterator end();
+  value_type::iterator end();
 
  private:
-  std::multimap<std::string, std::shared_ptr<bencode_value_base> > value_;
+  value_type value_;
 };
 
 #endif /* BENCODE_DICT_H */
