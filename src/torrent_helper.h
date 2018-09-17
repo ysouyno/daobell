@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "torrent_info.h"
 #include "bencode_string.h"
-#include "bencode_integer.h"
+#include "bencode_int.h"
 #include "bencode_list.h"
 #include "bencode_dict.h"
 #include "bencode_encoder.h"

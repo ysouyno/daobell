@@ -55,7 +55,7 @@ void bencode_encoder::crawl(bencode_string *p)
   encoded_str_ += p->get_value();
 }
 
-void bencode_encoder::crawl(bencode_integer *p)
+void bencode_encoder::crawl(bencode_int *p)
 {
   encoded_str_ += 'i';
   encoded_str_ += std::to_string(p->get_value());

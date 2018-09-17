@@ -1,13 +1,13 @@
-#ifndef BENCODE_INTEGER_H
-#define BENCODE_INTEGER_H
+#ifndef BENCODE_INT_H
+#define BENCODE_INT_H
 
-#include <iostream>
 #include "bencode_value_base.h"
+#include <iostream>
 
-class bencode_integer : public bencode_value_base
+class bencode_int : public bencode_value_base
 {
-public:
-  explicit bencode_integer(long long value);
+ public:
+  explicit bencode_int(long long value);
 
   void print_member();
 
@@ -15,8 +15,8 @@ public:
 
   long long get_value() const;
 
-private:
+ private:
   long long value_;
 };
 
-#endif /* BENCODE_INTEGER_H */
+#endif /* BENCODE_INT_H */

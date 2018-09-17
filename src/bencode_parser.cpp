@@ -42,7 +42,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(std::ifstream &ifs)
     ifs >> number;
     ifs.get();
 
-    return std::make_shared<bencode_integer>(number);
+    return std::make_shared<bencode_int>(number);
   }
   case 'l': {
     bencode_list *bl = new bencode_list();
@@ -107,7 +107,7 @@ std::shared_ptr<bencode_value_base> bencode_parser::parse(const char *p, const c
     size_t number = strtol(p, const_cast<char **>(end_p), 10);
     (*end_p)++;
 
-    return std::make_shared<bencode_integer>(number);
+    return std::make_shared<bencode_int>(number);
   }
   case 'l': {
     *end_p = p + 1;

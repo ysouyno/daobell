@@ -10,7 +10,7 @@ void bencode_to_map::crawl(bencode_string *p)
   crawl_str_ = p->get_value();
 }
 
-void bencode_to_map::crawl(bencode_integer *p)
+void bencode_to_map::crawl(bencode_int *p)
 {
   crawl_str_ = std::to_string(p->get_value());
 }

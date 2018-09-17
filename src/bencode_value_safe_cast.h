@@ -7,7 +7,7 @@ class empty_bencode_crawler : public bencode_crawler
 {
  public:
   virtual void crawl(bencode_string *p) {}
-  virtual void crawl(bencode_integer *p) {}
+  virtual void crawl(bencode_int *p) {}
   virtual void crawl(bencode_list *p) {}
   virtual void crawl(bencode_dict *p) {}
 };

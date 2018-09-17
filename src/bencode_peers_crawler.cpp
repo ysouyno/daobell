@@ -59,7 +59,7 @@ void bencode_peers_crawler::crawl(bencode_string *p)
   }
 }
 
-void bencode_peers_crawler::crawl(bencode_integer *p)
+void bencode_peers_crawler::crawl(bencode_int *p)
 {
 }
 

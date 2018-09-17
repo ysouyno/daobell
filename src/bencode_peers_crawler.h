@@ -22,7 +22,7 @@ public:
 
 private:
   virtual void crawl(bencode_string *p);
-  virtual void crawl(bencode_integer *p);
+  virtual void crawl(bencode_int *p);
   virtual void crawl(bencode_list *p);
   virtual void crawl(bencode_dict *p);
 

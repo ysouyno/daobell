@@ -1,21 +1,21 @@
-#include "bencode_integer.h"
+#include "bencode_int.h"
 
-bencode_integer::bencode_integer(long long value) :
+bencode_int::bencode_int(long long value) :
   value_(value)
 {
 }
 
-void bencode_integer::print_member()
+void bencode_int::print_member()
 {
   std::cout << value_ << std::endl;
 }
 
-void bencode_integer::crawl(bencode_crawler *p)
+void bencode_int::crawl(bencode_crawler *p)
 {
   p->crawl(this);
 }
 
-long long bencode_integer::get_value() const
+long long bencode_int::get_value() const
 {
   return value_;
 }

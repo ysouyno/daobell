@@ -41,8 +41,8 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
       dict_map dict = value->get_value();
       for (dict_map::iterator it = dict.begin(); it != dict.end(); ++it) {
         if (it->first == "length") {
-          bencode_integer *dict_key =
-            down_cast<bencode_integer>(it->second.get());
+          bencode_int *dict_key =
+            down_cast<bencode_int>(it->second.get());
           len = dict_key->get_value();
         }
 
@@ -102,14 +102,14 @@ int populate_info_from_dict(bencode_dict *info, const std::string &destdir,
     }
 
     if (it->first == "piece length") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         torrent->piece_length = value->get_value();
       }
     }
 
     if (it->first == "length") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         len = value->get_value();
       }
@@ -180,7 +180,7 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
     }
 
     if (it->first == "creation date") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         ret->creation_date = value->get_value();
       }

@@ -81,7 +81,7 @@ tracker_resp_parse(const std::string &resp_str)
     }
 
     if (it->first == "interval") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         ret->interval = value->get_value();
         std::cout << "interval: " << ret->interval << std::endl;
@@ -89,7 +89,7 @@ tracker_resp_parse(const std::string &resp_str)
     }
 
     if (it->first == "min interval") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         ret->min_interval = value->get_value();
         std::cout << "min interval: " << ret->min_interval << std::endl;
@@ -107,7 +107,7 @@ tracker_resp_parse(const std::string &resp_str)
     }
 
     if (it->first == "complete") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         ret->complete = value->get_value();
         std::cout << "complete: " << ret->complete << std::endl;
@@ -115,7 +115,7 @@ tracker_resp_parse(const std::string &resp_str)
     }
 
     if (it->first == "incomplete") {
-      bencode_integer *value = down_cast<bencode_integer>(it->second.get());
+      bencode_int *value = down_cast<bencode_int>(it->second.get());
       if (value) {
         ret->incomplete = value->get_value();
         std::cout << "incomplete: " << ret->incomplete << std::endl;

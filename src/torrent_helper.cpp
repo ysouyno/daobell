@@ -36,7 +36,7 @@ long long get_piece_length(torrent_info *ti, bencode_dict *root)
   bencode_dict *info_dict = dynamic_cast<bencode_dict *>(bvb);
   assert(info_dict != NULL);
 
-  bencode_integer *bi = dynamic_cast<bencode_integer *>(info_dict->get("piece length"));
+  bencode_int *bi = dynamic_cast<bencode_int *>(info_dict->get("piece length"));
   assert(bi != NULL);
 
   ti->piece_length_ = bi->get_value();
@@ -49,7 +49,7 @@ long long get_creation_date(torrent_info *ti, bencode_dict *root)
   bencode_value_base *bvb = root->get("creation date");
   assert(bvb != NULL);
 
-  bencode_integer *bi = dynamic_cast<bencode_integer *>(bvb);
+  bencode_int *bi = dynamic_cast<bencode_int *>(bvb);
   assert(bi != NULL);
 
   ti->creation_date_ = bi->get_value();
@@ -101,7 +101,7 @@ void get_files_and_size(torrent_info *ti, bencode_dict *root)
       bencode_dict *file_dict = dynamic_cast<bencode_dict *>(file.get());
       assert(file_dict != NULL);
 
-      bencode_integer *length = dynamic_cast<bencode_integer *>(file_dict->get("length"));
+      bencode_int *length = dynamic_cast<bencode_int *>(file_dict->get("length"));
       assert(length != NULL);
 
       ti->files_size_ += length->get_value();
@@ -132,7 +132,7 @@ void get_files_and_size(torrent_info *ti, bencode_dict *root)
     bencode_value_base *bvb_length = dynamic_cast<bencode_dict *>(bvb_info)->get("length");
     assert(bvb_length != NULL);
 
-    bencode_integer *length = dynamic_cast<bencode_integer *>(bvb_length);
+    bencode_int *length = dynamic_cast<bencode_int *>(bvb_length);
 
     ti->files_size_ = length->get_value();
 
