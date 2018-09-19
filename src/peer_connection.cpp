@@ -117,7 +117,7 @@ int peer_connect(peer_arg *arg)
 }
 
 int handshake(int sockfd, const peer_arg *parg, char peer_id[20],
-              char info_hash[20], torrent_info2 **out)
+              char info_hash[20], torrent_info **out)
 {
   assert(parg);
 
@@ -184,7 +184,7 @@ mqd_t peer_queue_open(int flags)
   return ret;
 }
 
-std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
+std::shared_ptr<conn_state> conn_state_init(const torrent_info *torrent)
 {
   assert(torrent);
 
@@ -201,9 +201,9 @@ std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
   ret->peer_have.resize(ret->bitlen, false);
   ret->peer_wants.resize(ret->bitlen, false);
 
-  pthread_mutex_lock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+  pthread_mutex_lock(&((const_cast<torrent_info *>(torrent))->sh_mutex));
   torrent_make_bitfield(torrent, &(ret->local_have));
-  pthread_mutex_unlock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+  pthread_mutex_unlock(&((const_cast<torrent_info *>(torrent))->sh_mutex));
 
   ret->blocks_sent = 0;
   ret->blocks_recvd = 0;
@@ -211,12 +211,12 @@ std::shared_ptr<conn_state> conn_state_init(const torrent_info2 *torrent)
   return ret;
 }
 
-void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
+void unchoke(int sockfd, const torrent_info *torrent, conn_state *state)
 {
   assert(state);
   assert(torrent);
 
-  peer_msg2 unchoke_msg;
+  peer_msg unchoke_msg;
   unchoke_msg.type = MSG_UNCHOKE;
 
   if (peer_msg_send(sockfd, torrent, &unchoke_msg)) {
@@ -228,10 +228,10 @@ void unchoke(int sockfd, const torrent_info2 *torrent, conn_state *state)
   std::cout << "unchoked peer" << std::endl;
 }
 
-void show_interested(int sockfd, const torrent_info2 *torrent,
+void show_interested(int sockfd, const torrent_info *torrent,
                      conn_state *state)
 {
-  peer_msg2 interested_msg;
+  peer_msg interested_msg;
   interested_msg.type = MSG_INTERESTED;
 
   if (peer_msg_send(sockfd, torrent, &interested_msg)) {
@@ -242,12 +242,12 @@ void show_interested(int sockfd, const torrent_info2 *torrent,
   state->local.interested = true;
 }
 
-void show_not_interested(int sockfd, const torrent_info2 *torrent,
+void show_not_interested(int sockfd, const torrent_info *torrent,
                          conn_state *state)
 {
   std::cout << "enter show_not_interested" << std::endl;
 
-  peer_msg2 not_interested_msg;
+  peer_msg not_interested_msg;
   not_interested_msg.type = MSG_NOT_INTERESTED;
 
   if (peer_msg_send(sockfd, torrent, &not_interested_msg)) {
@@ -258,7 +258,7 @@ void show_not_interested(int sockfd, const torrent_info2 *torrent,
   state->local.interested = false;
 }
 
-void handle_piece_dnld_completion(int sockfd, torrent_info2 *torrent,
+void handle_piece_dnld_completion(int sockfd, torrent_info *torrent,
                                   unsigned index)
 {
   assert(index < torrent->pieces.size());
@@ -289,14 +289,14 @@ void handle_piece_dnld_completion(int sockfd, torrent_info2 *torrent,
     torrent_complete(torrent);
   }
 
-  peer_msg2 have_msg;
+  peer_msg have_msg;
   have_msg.type = MSG_HAVE;
   have_msg.payload.have = index;
   peer_msg_send(sockfd, torrent, &have_msg);
 }
 
 void process_piece_msg(int sockfd, const piece_msg *msg,
-                       torrent_info2 *torrent, conn_state *state)
+                       torrent_info *torrent, conn_state *state)
 {
   typedef std::list<std::shared_ptr<piece_request> > piece_req_list;
   typedef std::list<std::shared_ptr<block_request> > block_req_list;
@@ -348,7 +348,7 @@ void process_piece_msg(int sockfd, const piece_msg *msg,
   }
 }
 
-void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
+void process_msg(int sockfd, torrent_info *torrent, const peer_msg *msg,
                  conn_state *state)
 {
   bool interested = false;
@@ -394,7 +394,7 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
     }
     std::cout << "conn_state.peer_have: " << state->peer_have << std::endl;
 
-    pthread_mutex_lock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+    pthread_mutex_lock(&((const_cast<torrent_info *>(torrent))->sh_mutex));
     for (unsigned i = 0; i < torrent->pieces.size(); ++i) {
       if (torrent->sh.pieces_state.at(i) != PIECE_STATE_HAVE &&
           state->peer_have[i]) {
@@ -404,7 +404,7 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
         break;
       }
     }
-    pthread_mutex_unlock(&((const_cast<torrent_info2 *>(torrent))->sh_mutex));
+    pthread_mutex_unlock(&((const_cast<torrent_info *>(torrent))->sh_mutex));
 
     if (interested) {
       show_interested(sockfd, torrent, state);
@@ -438,14 +438,14 @@ void process_msg(int sockfd, torrent_info2 *torrent, const peer_msg2 *msg,
   }
 }
 
-int process_queued_msgs(int sockfd, torrent_info2 *torrent, conn_state *state)
+int process_queued_msgs(int sockfd, torrent_info *torrent, conn_state *state)
 {
   while (peer_msg_buff_nonempty(sockfd)) {
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_testcancel();
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
-    peer_msg2 msg;
+    peer_msg msg;
 
     if (peer_msg_recv(sockfd, torrent, &msg)) {
       std::cout << "peer_msg_recv failed" << std::endl;
@@ -458,7 +458,7 @@ int process_queued_msgs(int sockfd, torrent_info2 *torrent, conn_state *state)
   return 0;
 }
 
-int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
+int send_requests(int sockfd, torrent_info *torrent, conn_state *state)
 {
   int n = PEER_NUM_OUTSTANDING_REQUESTS - state->local_requests.size();
   std::cout << "n = " << n << std::endl;
@@ -490,7 +490,7 @@ int send_requests(int sockfd, torrent_info2 *torrent, conn_state *state)
          it != sp_request->block_requests.end();
          ++it
          ) {
-      peer_msg2 req_msg;
+      peer_msg req_msg;
       req_msg.type = MSG_REQUEST;
       req_msg.payload.request.index = sp_request->piece_index;
       req_msg.payload.request.begin = (*it)->begin;
@@ -539,7 +539,7 @@ static void *peer_connection(void *arg)
 
   char peer_id[20] = {0};
   char info_hash[20] = {0};
-  torrent_info2 *torrent = NULL;
+  torrent_info *torrent = NULL;
 
   if (handshake(sockfd, parg, peer_id, info_hash, &torrent)) {
     std::cout << "handshake failed" << std::endl;
@@ -563,10 +563,10 @@ static void *peer_connection(void *arg)
   }
 
   // send the initial bitfield
-  peer_msg2 bitmsg;
+  peer_msg bitmsg;
   bitmsg.type = MSG_BITFIELD;
   bitmsg.payload.bitfield.resize(torrent->pieces.size(), false);
-  std::cout << "peer_msg2.payload.bitfield: " << bitmsg.payload.bitfield
+  std::cout << "peer_msg.payload.bitfield: " << bitmsg.payload.bitfield
             << std::endl;
   if (peer_msg_send(sockfd, torrent, &bitmsg)) {
     std::cout << "peer_msg_send failed" << std::endl;

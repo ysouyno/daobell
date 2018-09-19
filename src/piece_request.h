@@ -2,7 +2,7 @@
 #define PIECE_REQUEST_H
 
 #include "dnld_file.h"
-#include "torrent_info2.h"
+#include "torrent_info.h"
 #include <list>
 
 struct block_request
@@ -20,7 +20,7 @@ struct piece_request
   unsigned blocks_left;
 };
 
-int piece_request_create(const torrent_info2 *torrent, unsigned index,
+int piece_request_create(const torrent_info *torrent, unsigned index,
                          piece_request *out);
 block_request *piece_request_block_at(const piece_request *request,
                                       off_t offset);

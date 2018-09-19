@@ -140,7 +140,7 @@ int peer_recv_handshake(int sockfd, char out_info_hash[20],
   return 0;
 }
 
-uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
+uint32_t msg_length(const msg_type type, const torrent_info *torrent)
 {
   assert(torrent);
 
@@ -177,7 +177,7 @@ uint32_t msg_length(const msg_type type, const torrent_info2 *torrent)
   return ret;
 }
 
-int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
+int peer_msg_send(int sockfd, const torrent_info *torrent, peer_msg *msg)
 {
   // https://wiki.theory.org/index.php/BitTorrentSpecification#Messages
   // messages take the form of <length prefix><message ID><payload>
@@ -303,7 +303,7 @@ int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg)
   return 0;
 }
 
-inline bool valid_len(msg_type type, const torrent_info2 *torrent, uint32_t len)
+inline bool valid_len(msg_type type, const torrent_info *torrent, uint32_t len)
 {
   if (MSG_PIECE == type) {
     return
@@ -314,8 +314,8 @@ inline bool valid_len(msg_type type, const torrent_info2 *torrent, uint32_t len)
   return (len == msg_length(type, torrent));
 }
 
-int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
-                          uint32_t len, peer_msg2 *out)
+int peer_msg_recv_pastlen(int sockfd, const torrent_info *torrent,
+                          uint32_t len, peer_msg *out)
 {
   std::cout << "receiving message of length: " << len << std::endl;
 
@@ -383,7 +383,7 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
     }
 
     // bit 0 at the end
-    std::cout << "peer_msg2.payload.bitfield: "
+    std::cout << "peer_msg.payload.bitfield: "
               << out->payload.bitfield << std::endl;
 
     delete[] buff;
@@ -458,7 +458,7 @@ int peer_msg_recv_pastlen(int sockfd, const torrent_info2 *torrent,
   return 0;
 }
 
-int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out)
+int peer_msg_recv(int sockfd, const torrent_info *torrent, peer_msg *out)
 {
   assert(torrent);
 
@@ -506,7 +506,7 @@ bool peer_msg_buff_nonempty(int sockfd)
   }
 }
 
-int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
+int peer_msg_send_piece(int sockfd, const torrent_info *torrent,
                         const piece_msg *pmsg)
 {
   std::cout << "--- enter peer_msg_send_piece [index: "
@@ -577,8 +577,8 @@ int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
   return 0;
 }
 
-int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
-                        uint32_t len, peer_msg2 *out)
+int peer_msg_recv_piece(int sockfd, const torrent_info *torrent,
+                        uint32_t len, peer_msg *out)
 {
   std::cout << "--- enter peer_msg_recv_piece [len: "
             << len << "] ---" << std::endl;

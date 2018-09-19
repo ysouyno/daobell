@@ -1,5 +1,5 @@
-#ifndef TORRENT_INFO2_H
-#define TORRENT_INFO2_H
+#ifndef TORRENT_INFO_H
+#define TORRENT_INFO_H
 
 #include "bencode_value_base.h"
 #include "bencode_string.h"
@@ -30,7 +30,7 @@ enum {
   PIECE_STATE_HAVE
 };
 
-struct torrent_info2
+struct torrent_info
 {
   std::string announce;
   std::string comment;
@@ -56,13 +56,13 @@ struct torrent_info2
   pthread_mutex_t sh_mutex;
 };
 
-torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir);
-int torrent_make_bitfield(const torrent_info2 *torrent,
+torrent_info *torrent_init(bencode_value_ptr meta, const std::string &destdir);
+int torrent_make_bitfield(const torrent_info *torrent,
                           boost::dynamic_bitset<> *out);
-int torrent_next_request(torrent_info2 *torrent,
+int torrent_next_request(torrent_info *torrent,
                          boost::dynamic_bitset<> *peer_have,
                          unsigned *out);
-bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index);
-int torrent_complete(torrent_info2 *torrent);
+bool torrent_sha1_verify(const torrent_info *torrent, unsigned index);
+int torrent_complete(torrent_info *torrent);
 
-#endif /* TORRENT_INFO2_H */
+#endif /* TORRENT_INFO_H */

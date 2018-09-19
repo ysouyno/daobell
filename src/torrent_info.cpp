@@ -1,11 +1,11 @@
-#include "torrent_info2.h"
+#include "torrent_info.h"
 #include "piece_request.h"
 #include "sha1.h"
 #include <iostream>
 #include <assert.h>
 #include <string.h>
 
-int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
+int create_pieces_vector(const bencode_string *pieces, torrent_info *torrent)
 {
   assert(pieces->get_value().length() % 20 == 0);
 
@@ -19,7 +19,7 @@ int create_pieces_vector(const bencode_string *pieces, torrent_info2 *torrent)
 }
 
 int populate_files_from_list(bencode_list *files, const std::string &destdir,
-                             const std::string &name, torrent_info2 *torrent)
+                             const std::string &name, torrent_info *torrent)
 {
   int ret = 0;
 
@@ -75,7 +75,7 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
 }
 
 int populate_info_from_dict(bencode_dict *info, const std::string &destdir,
-                            torrent_info2 *torrent)
+                            torrent_info *torrent)
 {
   int ret = 0;
   bool multifile = false;
@@ -155,10 +155,10 @@ int populate_info_from_dict(bencode_dict *info, const std::string &destdir,
   return ret;
 }
 
-torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
+torrent_info *torrent_init(bencode_value_ptr meta, const std::string &destdir)
 {
-  torrent_info2 *ret = new torrent_info2;
-  // memset(ret, 0, sizeof(torrent_info2)); // fix segmentation fault
+  torrent_info *ret = new torrent_info;
+  // memset(ret, 0, sizeof(torrent_info)); // fix segmentation fault
 
   bencode_dict *dict = down_cast<bencode_dict>(meta.get());
   dict_map dictmap = dict->get_value();
@@ -223,7 +223,7 @@ torrent_info2 *torrent_init(bencode_value_ptr meta, const std::string &destdir)
   return ret;
 }
 
-int torrent_make_bitfield(const torrent_info2 *torrent,
+int torrent_make_bitfield(const torrent_info *torrent,
                           boost::dynamic_bitset<> *out)
 {
   assert(torrent);
@@ -241,7 +241,7 @@ int torrent_make_bitfield(const torrent_info2 *torrent,
   return 0;
 }
 
-int torrent_next_request(torrent_info2 *torrent,
+int torrent_next_request(torrent_info *torrent,
                          boost::dynamic_bitset<> *peer_have,
                          unsigned *out)
 {
@@ -284,7 +284,7 @@ int torrent_next_request(torrent_info2 *torrent,
   return 0;
 }
 
-bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index)
+bool torrent_sha1_verify(const torrent_info *torrent, unsigned index)
 {
   assert(index < torrent->pieces.size());
 
@@ -317,7 +317,7 @@ bool torrent_sha1_verify(const torrent_info2 *torrent, unsigned index)
   return (0 == memcmp(torrent->pieces[index].c_str(), sha1_digest, DIGEST_LEN));
 }
 
-int torrent_complete(torrent_info2 *torrent)
+int torrent_complete(torrent_info *torrent)
 {
   pthread_mutex_lock(&torrent->sh_mutex);
   torrent->sh.completed = true;

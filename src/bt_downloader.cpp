@@ -4,7 +4,7 @@
 #include "tracker_announce.h"
 #include "peer_info.h"
 #include "dnld_file.h"
-#include "torrent_info2.h"
+#include "torrent_info.h"
 #include "peer_info.h"
 #include "peer_connection.h"
 #include "peer_id.h"
@@ -16,7 +16,7 @@ static const uint16_t g_port = 6889;
 
 struct tracker_arg
 {
-  struct torrent_info2 *torrent;
+  struct torrent_info *torrent;
   uint16_t port;
 };
 
@@ -50,7 +50,7 @@ std::shared_ptr<tracker_announce_req> create_tracker_request(const void *arg)
   return ret;
 }
 
-int create_peer_connection(peer_info *peer, torrent_info2 *torrent)
+int create_peer_connection(peer_info *peer, torrent_info *torrent)
 {
   assert(peer);
   assert(torrent);
@@ -151,7 +151,7 @@ void bt_download(const std::string &metafile, const std::string &destdir)
   std::shared_ptr<bencode_value_base> sp_bvb = bp.get_value();
   bencode_reader br(sp_bvb);
 
-  torrent_info2 *torrent = torrent_init(sp_bvb, destdir);
+  torrent_info *torrent = torrent_init(sp_bvb, destdir);
 
   std::shared_ptr<tracker_arg> arg = std::make_shared<tracker_arg>();
   arg->torrent = torrent;

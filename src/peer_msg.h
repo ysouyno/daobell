@@ -1,7 +1,7 @@
 #ifndef PEER_MSG_H
 #define PEER_MSG_H
 
-#include "torrent_info2.h"
+#include "torrent_info.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <boost/dynamic_bitset.hpp>
@@ -47,7 +47,7 @@ struct piece_msg
 // constant. So the compiler can never know what to do. But using std::string
 // and std::vector in union is fine, you can find example here.
 // https://en.cppreference.com/w/cpp/language/union
-struct peer_msg2
+struct peer_msg
 {
   msg_type type;
   struct {
@@ -62,13 +62,13 @@ struct peer_msg2
 int peer_send_handshake(int sockfd, char info_hash[20]);
 int peer_recv_handshake(int sockfd, char out_info_hash[20],
                         char out_peer_id[20], bool peer_id);
-int peer_msg_send(int sockfd, const torrent_info2 *torrent, peer_msg2 *msg);
-int peer_msg_recv(int sockfd, const torrent_info2 *torrent, peer_msg2 *out);
+int peer_msg_send(int sockfd, const torrent_info *torrent, peer_msg *msg);
+int peer_msg_recv(int sockfd, const torrent_info *torrent, peer_msg *out);
 bool peer_msg_buff_nonempty(int sockfd);
-int peer_msg_send_piece(int sockfd, const torrent_info2 *torrent,
+int peer_msg_send_piece(int sockfd, const torrent_info *torrent,
                         const piece_msg *pmsg);
-int peer_msg_recv_piece(int sockfd, const torrent_info2 *torrent,
-                        uint32_t len, peer_msg2 *out);
+int peer_msg_recv_piece(int sockfd, const torrent_info *torrent,
+                        uint32_t len, peer_msg *out);
 std::string query_msg_type_text(int type);
 
 #endif /* PEER_MSG_H */

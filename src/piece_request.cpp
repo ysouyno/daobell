@@ -1,7 +1,7 @@
 #include "piece_request.h"
 #include "peer_msg.h"
 
-void skip_until_index(const torrent_info2 *torrent, unsigned index,
+void skip_until_index(const torrent_info *torrent, unsigned index,
                       off_t *offset, unsigned &files_vec_index)
 {
   size_t skip = torrent->piece_length * index;
@@ -25,7 +25,7 @@ void skip_until_index(const torrent_info2 *torrent, unsigned index,
   }
 }
 
-std::shared_ptr<block_request> next_block_request(const torrent_info2 *torrent,
+std::shared_ptr<block_request> next_block_request(const torrent_info *torrent,
                                                   off_t *offset,
                                                   size_t *left,
                                                   size_t piece_len,
@@ -78,7 +78,7 @@ std::shared_ptr<block_request> next_block_request(const torrent_info2 *torrent,
   return ret;
 }
 
-int piece_request_create(const torrent_info2 *torrent, unsigned index,
+int piece_request_create(const torrent_info *torrent, unsigned index,
                          piece_request *out)
 {
   off_t offset = 0;
