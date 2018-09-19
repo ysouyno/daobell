@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <string>
+#include <memory>
 
 struct file_mem
 {
@@ -11,17 +12,24 @@ struct file_mem
   size_t size;
 };
 
-struct dnld_file
+class dnld_file
 {
-  pthread_mutex_t mutex;
-  std::string path;
-  unsigned size;
-  unsigned char *data; // memory pointer
-};
+ public:
+  dnld_file() = default;
+  ~dnld_file() = default;
 
-dnld_file *dnld_file_create_and_open(const std::string &path, unsigned size);
-int dnld_file_close_and_free(dnld_file *file);
-void dnld_file_get_file_mem(const dnld_file *file, file_mem *out);
-int dnld_file_complete(dnld_file *file);
+ public:
+  int create_and_open(const std::string &path, unsigned size);
+  int close_and_free();
+  std::shared_ptr<file_mem> get_file_mem();
+  int complete();
+
+ private:
+  pthread_mutex_t mutex_;
+  std::string path_;
+  unsigned size_;
+  unsigned char *data_;
+  std::shared_ptr<file_mem> file_mem_;
+};
 
 #endif /* DNLD_FILE_H */

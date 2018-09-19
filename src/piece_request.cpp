@@ -9,17 +9,17 @@ void skip_until_index(const torrent_info *torrent, unsigned index,
   for (unsigned i = 0; i < torrent->files.size() && skip > 0; ++i) {
     assert(torrent->files[i]);
 
-    file_mem mem;
-    dnld_file_get_file_mem(torrent->files[i], &mem);
+    std::shared_ptr<file_mem> mem = std::make_shared<file_mem>();
+    mem = torrent->files[i]->get_file_mem();
 
     // this is the last file to skip
-    if (mem.size > skip) {
+    if (mem->size > skip) {
       *offset = skip;
       files_vec_index = i;
       return;
     }
     else {
-      skip -= mem.size;
+      skip -= mem->size;
       files_vec_index++;
     }
   }
@@ -51,11 +51,12 @@ std::shared_ptr<block_request> next_block_request(const torrent_info *torrent,
   for (unsigned i = files_vec_index;
        i < torrent->files.size() && curr_size < PEER_REQUEST_SIZE;
        ++i) {
-    dnld_file *file = torrent->files[i];
+    std::shared_ptr<dnld_file> file = torrent->files[i];
     assert(file);
 
     std::shared_ptr<file_mem> mem = std::make_shared<file_mem>();
-    dnld_file_get_file_mem(file, mem.get());
+    mem->mem = file->get_file_mem()->mem;
+    mem->size = file->get_file_mem()->size;
 
     mem->mem = ((char *)mem->mem + *offset);
     mem->size -= *offset;

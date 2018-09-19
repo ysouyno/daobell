@@ -37,7 +37,7 @@ struct torrent_info
   std::string created_by;
   uint32_t creation_date;
   unsigned piece_length;
-  std::vector<dnld_file *> files;
+  std::vector<std::shared_ptr<dnld_file> > files;
   char info_hash[20];
   pthread_t tracker_tid;
   unsigned max_peers;

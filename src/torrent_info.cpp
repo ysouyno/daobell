@@ -62,8 +62,8 @@ int populate_files_from_list(bencode_list *files, const std::string &destdir,
       }
     }
 
-    dnld_file *file = dnld_file_create_and_open(path, len);
-    if (file) {
+    std::shared_ptr<dnld_file> file = std::make_shared<dnld_file>();
+    if (!(file->create_and_open(path, len))) {
       torrent->files.push_back(file);
 
       // TODO: don't forget close and free somewhere
@@ -139,9 +139,8 @@ int populate_info_from_dict(bencode_dict *info, const std::string &destdir,
     path += "/";
     path += file_name;
 
-    dnld_file *file = dnld_file_create_and_open(path, len);
-    if (file) {
-      std::cout << "dnld_file_create_and_open success" << std::endl;
+    std::shared_ptr<dnld_file> file = std::make_shared<dnld_file>();
+    if (!(file->create_and_open(path, len))) {
       torrent->files.push_back(file);
 
       // TODO: don't forget close and free somewhere
@@ -324,10 +323,12 @@ int torrent_complete(torrent_info *torrent)
   // TODO torrent state
   pthread_mutex_unlock(&torrent->sh_mutex);
 
-  for (std::vector<dnld_file *>::iterator it = torrent->files.begin();
+  typedef std::vector<std::shared_ptr<dnld_file> > files_vec;
+
+  for (files_vec::iterator it = torrent->files.begin();
        it != torrent->files.end();
        ++it) {
-    dnld_file_complete(*it);
+    (*it)->complete();
   }
 
   std::cout << "torrent completed" << std::endl;
